@@ -1,26 +1,28 @@
 // config/db.js
-
-const mysql = require('mysql2');
+const mysql = require('mysql2/promise');
 const dotenv = require('dotenv');
 
-dotenv.config(); // Load environment variables
+dotenv.config();
 
-// Create MySQL connection
-const connection = mysql.createConnection({
-  host: process.env.DB_HOST,     // usually 'localhost'
-  user: process.env.DB_USER,     // usually 'root'
-  password: process.env.DB_PASS, // often blank in XAMPP
-  database: process.env.DB_NAME  // the name of your DB (car_rental)
+const pool = mysql.createPool({
+  host: process.env.DB_HOST,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASS,
+  database: process.env.DB_NAME,
+  waitForConnections: true,
+  connectionLimit: 10,
+  queueLimit: 0
 });
 
-// Connect to MySQL
-connection.connect((err) => {
-  if (err) {
-    console.error('❌ MySQL connection failed:', err.message);
-    process.exit(1);
-  } else {
-    console.log('✅ Connected to MySQL Database');
+// Test connection once when server starts
+(async () => {
+  try {
+    await pool.query('SELECT 1');
+    console.log('✅ Connected to MySQL database');
+  } catch (error) {
+    console.error('❌ MySQL connection failed:', error.message);
+    process.exit(1); // Optional: stop the server if DB fails
   }
-});
+})();
 
-module.exports = connection;
+module.exports = pool;

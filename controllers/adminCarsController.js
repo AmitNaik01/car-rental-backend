@@ -2,32 +2,81 @@ const db = require("../config/db"); // db is already the pool
 const path = require("path");
 
 exports.saveBasicInfo = async (req, res) => {
-  const { car_id, make, model, year, color, registration_number, vin } =
-    req.body;
+  const {
+    car_id, make, model, year, color, registration_number, vin,
+    total_km, car_type, engine_capacity, fuel_type,
+    mileage, max_power, max_speed, about, ratings,
+    features // Pass as an object
+  } = req.body;
 
-  const adminId = req.user.id; // ✅ Get admin user ID from token middleware
+  const adminId = req.user.id;
 
   try {
     if (car_id) {
-      const [result] = await db.execute(
-        `UPDATE cars 
-         SET make = ?, model = ?, year = ?, color = ?, registration_number = ?, vin = ?, updated_at = NOW() 
-         WHERE id = ?`,
-        [make, model, year, color, registration_number, vin, car_id]
+      await db.execute(
+        `UPDATE cars SET make = ?, model = ?, year = ?, color = ?, registration_number = ?, vin = ?,
+         total_km = ?, car_type = ?, engine_capacity = ?, fuel_type = ?, mileage = ?, 
+         max_power = ?, max_speed = ?, about = ?, ratings = ?, updated_at = NOW() WHERE id = ?`,
+        [make, model, year, color, registration_number, vin,
+         total_km, car_type, engine_capacity, fuel_type, mileage,
+         max_power, max_speed, about, ratings, car_id]
       );
+
+      // Update features if provided
+      if (features) {
+        await db.execute(
+          `REPLACE INTO car_features (car_id, bluetooth, air_conditioning, power_windows, power_steering,
+            keyless_entry, music_system, air_fresher)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+          [
+            car_id,
+            features.bluetooth || false,
+            features.air_conditioning || false,
+            features.power_windows || false,
+            features.power_steering || false,
+            features.keyless_entry || false,
+            features.music_system || false,
+            features.air_fresher || false,
+          ]
+        );
+      }
 
       return res.json({ success: true, message: "Car info updated", car_id });
     } else {
       const [result] = await db.execute(
-        `INSERT INTO cars (make, model, year, color, registration_number, vin, created_by) 
-         VALUES (?, ?, ?, ?, ?, ?, ?)`,
-        [make, model, year, color, registration_number, vin, adminId]
+        `INSERT INTO cars (make, model, year, color, registration_number, vin, total_km, car_type, 
+         engine_capacity, fuel_type, mileage, max_power, max_speed, about, ratings, created_by)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [make, model, year, color, registration_number, vin,
+         total_km, car_type, engine_capacity, fuel_type,
+         mileage, max_power, max_speed, about, ratings, adminId]
       );
+
+      const newCarId = result.insertId;
+
+      // Insert features if provided
+      if (features) {
+        await db.execute(
+          `INSERT INTO car_features (car_id, bluetooth, air_conditioning, power_windows, power_steering,
+            keyless_entry, music_system, air_fresher)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+          [
+            newCarId,
+            features.bluetooth || false,
+            features.air_conditioning || false,
+            features.power_windows || false,
+            features.power_steering || false,
+            features.keyless_entry || false,
+            features.music_system || false,
+            features.air_fresher || false,
+          ]
+        );
+      }
 
       return res.json({
         success: true,
         message: "Car created",
-        car_id: result.insertId,
+        car_id: newCarId,
       });
     }
   } catch (error) {
@@ -287,7 +336,7 @@ exports.getCarDetails = async (req, res) => {
   const { car_id } = req.params;
 
   try {
-    // 1. Basic Car Info
+    // 1. Basic Car Info with all extended fields
     const [car] = await db.execute("SELECT * FROM cars WHERE id = ?", [car_id]);
     if (car.length === 0) {
       return res.status(404).json({ success: false, message: "Car not found" });
@@ -298,23 +347,30 @@ exports.getCarDetails = async (req, res) => {
       "SELECT * FROM car_images WHERE car_id = ?",
       [car_id]
     );
+
     const [pricing] = await db.execute(
       "SELECT * FROM car_pricing WHERE car_id = ?",
       [car_id]
     );
+
     const [availability] = await db.execute(
       `SELECT 
-     car_id,
-     DATE_FORMAT(available_from, '%Y-%m-%d') AS available_from,
-     DATE_FORMAT(available_to, '%Y-%m-%d') AS available_to,
-     available_days
-   FROM car_availability 
-   WHERE car_id = ?`,
+        car_id,
+        DATE_FORMAT(available_from, '%Y-%m-%d') AS available_from,
+        DATE_FORMAT(available_to, '%Y-%m-%d') AS available_to,
+        available_days
+       FROM car_availability 
+       WHERE car_id = ?`,
       [car_id]
     );
 
     const [documents] = await db.execute(
       "SELECT * FROM car_documents WHERE car_id = ?",
+      [car_id]
+    );
+
+    const [features] = await db.execute(
+      "SELECT * FROM car_features WHERE car_id = ?",
       [car_id]
     );
 
@@ -327,6 +383,7 @@ exports.getCarDetails = async (req, res) => {
         pricing: pricing[0] || {},
         availability: availability[0] || {},
         documents: documents[0] || {},
+        features: features[0] || {},
       },
     });
   } catch (error) {

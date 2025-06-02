@@ -11,6 +11,10 @@ const adminCars = require('./routes/adminCars');
 
 dotenv.config();
 const app = express();
+app.get('/', (req, res) => {
+  res.send('✅ Car Rental Backend is up and running!');
+});
+
 
 // Middleware
 app.use(express.json());

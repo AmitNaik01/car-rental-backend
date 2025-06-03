@@ -95,6 +95,17 @@ const updateLastLogin = async (userId) => {
   return result;
 };
 
+// 👉 Update verification code and expiry
+const updateVerificationCode = async (email, code) => {
+  const sql = `
+    UPDATE users
+    SET verification_code = ?, verification_expiry = DATE_ADD(NOW(), INTERVAL 15 MINUTE)
+    WHERE email = ?
+  `;
+  const [result] = await db.execute(sql, [code, email]);
+  return result;
+};
+
 module.exports = {
   createUser,
   createUserWithVerification,
@@ -104,5 +115,6 @@ module.exports = {
   setResetCode,
   findByResetCode,
   updatePassword,
-  updateLastLogin
+  updateLastLogin,
+  updateVerificationCode
 };

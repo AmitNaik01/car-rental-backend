@@ -145,10 +145,45 @@ const verifyEmail = async (req, res) => {
   }
 };
 
+const resendVerificationCode = async (req, res) => {
+  const { email } = req.body;
+
+  if (!email) {
+    return res.status(400).json({ message: 'Email is required' });
+  }
+
+  try {
+    const user = await userModel.findUserByEmail(email);
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    if (user.is_verified) {
+      return res.status(400).json({ message: 'User is already verified' });
+    }
+
+    // Generate new code
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+
+    // Use model to update
+    await userModel.updateVerificationCode(email, code);
+
+    // Send email
+    await sendResetCode(email, code);
+
+    res.status(200).json({ message: 'Verification code resent to your email' });
+  } catch (err) {
+    console.error('Resend Verification Error:', err);
+    res.status(500).json({ message: 'Failed to resend verification code', error: err.message });
+  }
+};
+
 module.exports = {
   signup,
   login,
   forgotPassword,
   resetPassword,
-  verifyEmail
+  verifyEmail,
+  resendVerificationCode
 };

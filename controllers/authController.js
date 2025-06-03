@@ -182,7 +182,7 @@ const resendVerificationCode = async (req, res) => {
     // Send email
     await sendResetCode(email, code);
 
-    res.status(200).json({ message: 'Verification code sent to your email' });
+    res.status(200).json({ message: 'Verification code is sent to your email' });
   } catch (err) {
     console.error('Resend Verification Error:', err);
     res.status(500).json({ message: 'Failed to resend verification code', error: err.message });

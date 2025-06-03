@@ -7,9 +7,9 @@ const JWT_SECRET = process.env.JWT_SECRET;
 
 // 👉 Signup
 const signup = async (req, res) => {
-  const { name, email, password, role = 'user' } = req.body;
+  const { first_name, last_name, email, password, dob, role = 'user' } = req.body;
 
-  if (!name || !email || !password) {
+  if (!first_name || !last_name || !email || !password || !dob) {
     return res.status(400).json({ message: 'All fields are required' });
   }
 
@@ -22,7 +22,7 @@ const signup = async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10);
     const code = Math.floor(100000 + Math.random() * 900000).toString();
 
-    await userModel.createUserWithVerification(name, email, hashedPassword, role, code);
+    await userModel.createUserWithVerification(first_name, last_name, email, hashedPassword, dob, role, code);
     await sendResetCode(email, code);
 
     res.status(201).json({ message: 'Verification code sent to email. Please verify.' });
@@ -31,6 +31,7 @@ const signup = async (req, res) => {
     res.status(500).json({ message: 'Signup failed' });
   }
 };
+
 
 // 👉 Login
 const login = async (req, res) => {

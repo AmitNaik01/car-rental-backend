@@ -15,17 +15,26 @@ const signup = async (req, res) => {
 
   try {
     const existingUser = await userModel.findUserByEmail(email);
-    if (existingUser) {
-      return res.status(409).json({ message: 'Email already registered' });
-    }
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
 
     // Convert DOB from DD/MM/YYYY to YYYY-MM-DD
     const [day, month, year] = dob.split('/');
     const formattedDob = `${year}-${month}-${day}`;
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    const code = Math.floor(100000 + Math.random() * 900000).toString();
 
+    if (existingUser) {
+      if (existingUser.is_verified) {
+        return res.status(409).json({ message: 'Email already registered and verified' });
+      } else {
+        // Update code & expiry for already registered but unverified user
+        await userModel.updateVerificationCode(email, code);
+        await sendResetCode(email, code);
+        return res.status(200).json({ message: 'Verification code re-sent to your email. Please verify.' });
+      }
+    }
+
+    // Create new user with verification code
     await userModel.createUserWithVerification(
       first_name,
       last_name,
@@ -44,6 +53,7 @@ const signup = async (req, res) => {
     res.status(500).json({ message: 'Signup failed', error: err.message });
   }
 };
+
 
 
 
@@ -172,7 +182,7 @@ const resendVerificationCode = async (req, res) => {
     // Send email
     await sendResetCode(email, code);
 
-    res.status(200).json({ message: 'Verification code resent to your email' });
+    res.status(200).json({ message: 'Verification code sent to your email' });
   } catch (err) {
     console.error('Resend Verification Error:', err);
     res.status(500).json({ message: 'Failed to resend verification code', error: err.message });

@@ -22,15 +22,15 @@ const createUserWithVerification = async (first_name, last_name, email, hashedPa
 };
 
 // 👉 Create basic user (without verification, if needed)
-const createUser = async (name, email, hashedPassword, role) => {
-  const sql = `
-    INSERT INTO users (name, email, password, role, created_at)
-    VALUES (?, ?, ?, ?, NOW())`;
+// const createUser = async (name, email, hashedPassword, role) => {
+//   const sql = `
+//     INSERT INTO users (name, email, password, role, created_at)
+//     VALUES (?, ?, ?, ?, NOW())`;
 
-  const [result] = await db.execute(sql, [name, email, hashedPassword, role]);
+//   const [result] = await db.execute(sql, [name, email, hashedPassword, role]);
 
-  return result;
-};
+//   return result;
+// };
 
 // 👉 Find user by email
 const findUserByEmail = async (email) => {
@@ -100,14 +100,14 @@ const updateVerificationCode = async (email, code) => {
   const sql = `
     UPDATE users
     SET verification_code = ?, verification_expiry = DATE_ADD(NOW(), INTERVAL 15 MINUTE)
-    WHERE email = ?
-  `;
+    WHERE email = ?`;
   const [result] = await db.execute(sql, [code, email]);
   return result;
 };
 
+
 module.exports = {
-  createUser,
+//   createUser,
   createUserWithVerification,
   findUserByEmail,
   findByVerificationCode,

@@ -19,19 +19,32 @@ const signup = async (req, res) => {
       return res.status(409).json({ message: 'Email already registered' });
     }
 
+    // Convert DOB from DD/MM/YYYY to YYYY-MM-DD
+    const [day, month, year] = dob.split('/');
+    const formattedDob = `${year}-${month}-${day}`;
+
     const hashedPassword = await bcrypt.hash(password, 10);
     const code = Math.floor(100000 + Math.random() * 900000).toString();
 
-    await userModel.createUserWithVerification(first_name, last_name, email, hashedPassword, dob, role, code);
+    await userModel.createUserWithVerification(
+      first_name,
+      last_name,
+      email,
+      hashedPassword,
+      formattedDob,
+      role,
+      code
+    );
+
     await sendResetCode(email, code);
 
     res.status(201).json({ message: 'Verification code sent to email. Please verify.' });
   } catch (err) {
-  console.error('Signup Error:', err); // <-- this should already be in your code
-  res.status(500).json({ message: 'Signup failed', error: err.message }); // Add error in response
-}
-
+    console.error('Signup Error:', err);
+    res.status(500).json({ message: 'Signup failed', error: err.message });
+  }
 };
+
 
 
 // 👉 Login

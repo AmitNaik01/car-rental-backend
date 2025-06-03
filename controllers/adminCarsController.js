@@ -3,82 +3,113 @@ const path = require("path");
 
 exports.saveBasicInfo = async (req, res) => {
   const {
-    car_id, make, model, year, color, registration_number, vin,
-    total_km, car_type, engine_capacity, fuel_type,
-    mileage, max_power, max_speed, about, ratings,
-    features // Pass as an object
+    car_id, make, model, year, color, registration_number, vin, about,
+    features, specifications
   } = req.body;
 
-  const adminId = req.user.id;
+  const adminId = req.user.id; // Assuming JWT middleware sets req.user
 
   try {
+    let carIdToUse = car_id;
+
     if (car_id) {
+      // Update car
       await db.execute(
-        `UPDATE cars SET make = ?, model = ?, year = ?, color = ?, registration_number = ?, vin = ?,
-         total_km = ?, car_type = ?, engine_capacity = ?, fuel_type = ?, mileage = ?, 
-         max_power = ?, max_speed = ?, about = ?, ratings = ?, updated_at = NOW() WHERE id = ?`,
-        [make, model, year, color, registration_number, vin,
-         total_km, car_type, engine_capacity, fuel_type, mileage,
-         max_power, max_speed, about, ratings, car_id]
+        `UPDATE cars SET make = ?, model = ?, year = ?, color = ?, registration_number = ?, vin = ?, about = ?, updated_at = NOW() WHERE id = ?`,
+        [make, model, year, color, registration_number, vin, about, car_id]
       );
-
-      // Update features if provided
-      if (features) {
-        await db.execute(
-          `REPLACE INTO car_features (car_id, bluetooth, air_conditioning, power_windows, power_steering,
-            keyless_entry, music_system, air_fresher)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-          [
-            car_id,
-            features.bluetooth || false,
-            features.air_conditioning || false,
-            features.power_windows || false,
-            features.power_steering || false,
-            features.keyless_entry || false,
-            features.music_system || false,
-            features.air_fresher || false,
-          ]
-        );
-      }
-
-      return res.json({ success: true, message: "Car info updated", car_id });
     } else {
+      // Insert car
       const [result] = await db.execute(
-        `INSERT INTO cars (make, model, year, color, registration_number, vin, total_km, car_type, 
-         engine_capacity, fuel_type, mileage, max_power, max_speed, about, ratings, created_by)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [make, model, year, color, registration_number, vin,
-         total_km, car_type, engine_capacity, fuel_type,
-         mileage, max_power, max_speed, about, ratings, adminId]
+        `INSERT INTO cars (make, model, year, color, registration_number, vin, about, created_by)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        [make, model, year, color, registration_number, vin, about, adminId]
+      );
+      carIdToUse = result.insertId;
+    }
+
+    // ✅ Save features
+    if (features) {
+      const [existingFeatures] = await db.execute(
+        `SELECT car_id FROM car_features WHERE car_id = ?`, [carIdToUse]
       );
 
-      const newCarId = result.insertId;
+      const featureValues = [
+        features.bluetooth || false,
+        features.air_conditioning || false,
+        features.power_windows || false,
+        features.power_steering || false,
+        features.keyless_entry || false,
+        features.music_system || false,
+        features.air_fresher || false,
+        features.air_bags || false,
+        features.climate_control || false,
+        features.stability_control || false,
+        features.sunroof || false,
+        features.navigation_system || false
+      ];
 
-      // Insert features if provided
-      if (features) {
-        await db.execute(
-          `INSERT INTO car_features (car_id, bluetooth, air_conditioning, power_windows, power_steering,
-            keyless_entry, music_system, air_fresher)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-          [
-            newCarId,
-            features.bluetooth || false,
-            features.air_conditioning || false,
-            features.power_windows || false,
-            features.power_steering || false,
-            features.keyless_entry || false,
-            features.music_system || false,
-            features.air_fresher || false,
-          ]
-        );
+      if (existingFeatures.length > 0) {
+        await db.execute(`
+          UPDATE car_features SET
+          bluetooth = ?, air_conditioning = ?, power_windows = ?, power_steering = ?, keyless_entry = ?,
+          music_system = ?, air_fresher = ?, air_bags = ?, climate_control = ?, stability_control = ?,
+          sunroof = ?, navigation_system = ?
+          WHERE car_id = ?
+        `, [...featureValues, carIdToUse]);
+      } else {
+        await db.execute(`
+          INSERT INTO car_features (car_id, bluetooth, air_conditioning, power_windows, power_steering,
+            keyless_entry, music_system, air_fresher, air_bags, climate_control, stability_control, sunroof, navigation_system)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `, [carIdToUse, ...featureValues]);
       }
-
-      return res.json({
-        success: true,
-        message: "Car created",
-        car_id: newCarId,
-      });
     }
+
+    // ✅ Save specifications
+    if (specifications) {
+      const [existingSpecs] = await db.execute(
+        `SELECT car_id FROM car_specifications WHERE car_id = ?`, [carIdToUse]
+      );
+
+      const specValues = [
+        specifications.max_power,
+        specifications.fuel_type,
+        specifications.fuel_efficiency,
+        specifications.engine_displacement,
+        specifications.horsepower,
+        specifications.torque,
+        specifications.max_speed,
+        specifications.transmission,
+        specifications.drivetrain,
+        specifications.length,
+        specifications.width,
+        specifications.height,
+        specifications.wheelbase,
+        specifications.ground_clearance
+      ];
+
+      if (existingSpecs.length > 0) {
+        await db.execute(`
+          UPDATE car_specifications SET
+          max_power = ?, fuel_type = ?, fuel_efficiency = ?, engine_displacement = ?, horsepower = ?, torque = ?, max_speed = ?,
+          transmission = ?, drivetrain = ?, length = ?, width = ?, height = ?, wheelbase = ?, ground_clearance = ?
+          WHERE car_id = ?
+        `, [...specValues, carIdToUse]);
+      } else {
+        await db.execute(`
+          INSERT INTO car_specifications (car_id, max_power, fuel_type, fuel_efficiency, engine_displacement,
+            horsepower, torque, max_speed, transmission, drivetrain, length, width, height, wheelbase, ground_clearance)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `, [carIdToUse, ...specValues]);
+      }
+    }
+
+    return res.json({
+      success: true,
+      message: car_id ? "Car updated" : "Car created",
+      car_id: carIdToUse
+    });
   } catch (error) {
     console.error("❌ Error in saveBasicInfo:", error);
     return res.status(500).json({ success: false, message: "Server error" });
@@ -336,7 +367,7 @@ exports.getCarDetails = async (req, res) => {
   const { car_id } = req.params;
 
   try {
-    // 1. Basic Car Info with all extended fields
+    // 1. Basic Car Info
     const [car] = await db.execute("SELECT * FROM cars WHERE id = ?", [car_id]);
     if (car.length === 0) {
       return res.status(404).json({ success: false, message: "Car not found" });
@@ -374,7 +405,12 @@ exports.getCarDetails = async (req, res) => {
       [car_id]
     );
 
-    // 3. Build response
+    const [specifications] = await db.execute(
+      "SELECT * FROM car_specifications WHERE car_id = ?",
+      [car_id]
+    );
+
+    // 3. Build Response
     res.json({
       success: true,
       data: {
@@ -384,6 +420,7 @@ exports.getCarDetails = async (req, res) => {
         availability: availability[0] || {},
         documents: documents[0] || {},
         features: features[0] || {},
+        specifications: specifications[0] || {}
       },
     });
   } catch (error) {

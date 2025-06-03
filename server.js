@@ -2,29 +2,34 @@
 
 const express = require('express');
 const dotenv = require('dotenv');
-const authRoutes = require('./routes/authRoutes');
 const db = require('./config/db');
-//test routes
+
+// Route imports
+const authRoutes = require('./routes/authRoutes');
 const testRoutes = require('./routes/testRoutes');
-const adminCars = require('./routes/adminCars');
+const adminCarsRoutes = require('./routes/adminCars');
 
-
+// Load env variables
 dotenv.config();
+
+// Initialize app
 const app = express();
+
+// ✅ Middleware to parse JSON and form data
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+
+// ✅ Health Check Route
 app.get('/', (req, res) => {
   res.send('✅ Car Rental Backend is up and running!');
 });
 
-
-// Middleware
-app.use(express.json());
-
-// Routes
+// ✅ API Routes
 app.use('/api/auth', authRoutes);
-
 app.use('/api/test', testRoutes);
+app.use('/api/admin', adminCarsRoutes);
 
-app.use('/api/admin/', adminCars);
-// Start Server
+// ✅ Start Server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));

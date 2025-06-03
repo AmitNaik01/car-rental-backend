@@ -2,7 +2,9 @@ const db = require('../config/db'); // Pooled connection from mysql2/promise
 
 // Create a new user
 const createUser = async (name, email, hashedPassword, role) => {
-  const sql = 'INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)';
+  const sql = `
+    INSERT INTO users (name, email, password, role, created_at)
+    VALUES (?, ?, ?, ?, NOW())`;
   const [result] = await db.execute(sql, [name, email, hashedPassword, role]);
   return result;
 };
@@ -10,8 +12,10 @@ const createUser = async (name, email, hashedPassword, role) => {
 // Create user with email verification code
 const createUserWithVerification = async (name, email, hashedPassword, role, code) => {
   const sql = `
-    INSERT INTO users (name, email, password, role, verification_code, verification_expiry)
-    VALUES (?, ?, ?, ?, ?, DATE_ADD(NOW(), INTERVAL 15 MINUTE))`;
+    INSERT INTO users (
+      name, email, password, role, verification_code, verification_expiry, created_at
+    )
+    VALUES (?, ?, ?, ?, ?, DATE_ADD(NOW(), INTERVAL 15 MINUTE), NOW())`;
   const [result] = await db.execute(sql, [name, email, hashedPassword, role, code]);
   return result;
 };
@@ -25,7 +29,9 @@ const findUserByEmail = async (email) => {
 
 // Find user by email and verification code
 const findByVerificationCode = async (email, code) => {
-  const sql = 'SELECT * FROM users WHERE email = ? AND verification_code = ? AND verification_expiry > NOW()';
+  const sql = `
+    SELECT * FROM users 
+    WHERE email = ? AND verification_code = ? AND verification_expiry > NOW()`;
   const [rows] = await db.execute(sql, [email, code]);
   return rows[0];
 };
@@ -37,7 +43,7 @@ const verifyUserEmail = async (userId) => {
   return result;
 };
 
-// Set reset code and expiry
+// Set password reset code and expiry
 const setResetCode = async (email, code) => {
   const sql = `
     UPDATE users
@@ -54,13 +60,20 @@ const findByResetCode = async (code) => {
   return rows[0];
 };
 
-// Update password and clear reset code
+// Update password and clear reset token
 const updatePassword = async (userId, newHashedPassword) => {
   const sql = `
     UPDATE users
     SET password = ?, reset_token = NULL, reset_token_expiry = NULL
     WHERE id = ?`;
   const [result] = await db.execute(sql, [newHashedPassword, userId]);
+  return result;
+};
+
+// Update last login time
+const updateLastLogin = async (userId) => {
+  const sql = 'UPDATE users SET last_login = NOW() WHERE id = ?';
+  const [result] = await db.execute(sql, [userId]);
   return result;
 };
 
@@ -72,5 +85,6 @@ module.exports = {
   verifyUserEmail,
   setResetCode,
   findByResetCode,
-  updatePassword
+  updatePassword,
+  updateLastLogin
 };

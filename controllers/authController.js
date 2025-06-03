@@ -27,9 +27,10 @@ const signup = async (req, res) => {
 
     res.status(201).json({ message: 'Verification code sent to email. Please verify.' });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Signup failed' });
-  }
+  console.error('Signup Error:', err); // <-- this should already be in your code
+  res.status(500).json({ message: 'Signup failed', error: err.message }); // Add error in response
+}
+
 };
 
 

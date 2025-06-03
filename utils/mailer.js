@@ -15,13 +15,13 @@ const sendResetCode = async (email, code) => {
   const mailOptions = {
     from: process.env.EMAIL_USER,
     to: email,
-    subject: 'Your Password Reset Code',
-    text: `Your password reset code is: ${code}`
+    subject: 'Your Verification Code',
+    text: `Your verification code is: ${code}`
   };
 
   try {
     const info = await transporter.sendMail(mailOptions);
-    console.log('✅ Reset code email sent:', info.response);
+    console.log('✅ code email sent:', info.response);
     return true;
   } catch (error) {
     console.error('❌ Email send error:', error);

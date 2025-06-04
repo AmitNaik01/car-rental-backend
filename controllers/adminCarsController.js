@@ -152,7 +152,7 @@ exports.uploadCarImages = async (req, res) => {
         (val) => val !== null
       );
 
-      const sql = `UPDATE car_images SET ${updateFields}, updated_at = NOW() WHERE car_id = ?`;
+      const sql = `UPDATE car_images SET ${updateFields} WHERE car_id = ?`;
       await db.execute(sql, [...updateValues, car_id]);
     } else {
       // Insert new row

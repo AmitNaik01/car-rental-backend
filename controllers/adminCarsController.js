@@ -428,3 +428,48 @@ exports.getCarDetails = async (req, res) => {
     res.status(500).json({ success: false, message: "Server error" });
   }
 };
+
+exports.getAllCarsWithDetails = async (req, res) => {
+  try {
+    // 1. Get all cars
+    const [cars] = await db.execute("SELECT * FROM cars");
+
+    if (cars.length === 0) {
+      return res.json({ success: true, data: [] });
+    }
+
+    // 2. Get all related data
+    const [images] = await db.execute("SELECT * FROM car_images");
+    const [pricing] = await db.execute("SELECT * FROM car_pricing");
+    const [availability] = await db.execute(
+      `SELECT car_id, 
+              DATE_FORMAT(available_from, '%Y-%m-%d') AS available_from, 
+              DATE_FORMAT(available_to, '%Y-%m-%d') AS available_to, 
+              available_days 
+       FROM car_availability`
+    );
+    const [documents] = await db.execute("SELECT * FROM car_documents");
+    const [features] = await db.execute("SELECT * FROM car_features");
+    const [specifications] = await db.execute("SELECT * FROM car_specifications");
+
+    // 3. Map data to each car
+    const result = cars.map(car => {
+      const carId = car.id;
+
+      return {
+        car,
+        images: images.find(item => item.car_id === carId) || {},
+        pricing: pricing.find(item => item.car_id === carId) || {},
+        availability: availability.find(item => item.car_id === carId) || {},
+        documents: documents.find(item => item.car_id === carId) || {},
+        features: features.find(item => item.car_id === carId) || {},
+        specifications: specifications.find(item => item.car_id === carId) || {}
+      };
+    });
+
+    res.json({ success: true, data: result });
+  } catch (error) {
+    console.error("❌ Error fetching all car details:", error);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};

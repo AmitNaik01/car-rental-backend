@@ -9,7 +9,8 @@ const {
   saveCarAvailability,
   uploadDocuments,
   getCarDetails,
-  markCarAsComplete
+  markCarAsComplete,
+  getAllCarsWithDetails
 } = require('../controllers/adminCarsController');
 
 // Middleware: Auth + Role Check
@@ -59,5 +60,7 @@ router.post('/cars/complete', verifyToken, isAdmin, markCarAsComplete);
 
 // 7. Get car data 
 router.get('/cars/:car_id', getCarDetails);
+
+router.get('/cars', verifyToken, getAllCarsWithDetails);
 
 module.exports = router;

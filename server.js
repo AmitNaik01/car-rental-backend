@@ -8,6 +8,7 @@ const db = require('./config/db');
 const authRoutes = require('./routes/authRoutes');
 const testRoutes = require('./routes/testRoutes');
 const adminCarsRoutes = require('./routes/adminCars');
+const userBookingRoutes = require('./routes/userBooking');
 
 // Load env variables
 dotenv.config();
@@ -29,6 +30,7 @@ app.get('/', (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/test', testRoutes);
 app.use('/api/admin', adminCarsRoutes);
+app.use('/api/user', userBookingRoutes);
 
 // ✅ Start Server
 const PORT = process.env.PORT || 5000;

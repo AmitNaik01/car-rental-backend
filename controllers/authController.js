@@ -114,16 +114,37 @@ const forgotPassword = async (req, res) => {
 };
 
 // 👉 Reset Password
-const resetPassword = async (req, res) => {
-  const { code, newPassword } = req.body;
+// const resetPassword = async (req, res) => {
+//   const { code, newPassword } = req.body;
 
-  if (!code || !newPassword) {
-    return res.status(400).json({ message: 'Code and new password are required' });
+//   if (!code || !newPassword) {
+//     return res.status(400).json({ message: 'Code and new password are required' });
+//   }
+
+//   try {
+//     const user = await userModel.findByResetCode(code);
+//     if (!user) return res.status(400).json({ message: 'Invalid or expired code' });
+
+//     const hashed = await bcrypt.hash(newPassword, 10);
+//     await userModel.updatePassword(user.id, hashed);
+
+//     res.status(200).json({ message: 'Password reset successful' });
+//   } catch (err) {
+//     console.error(err);
+//     res.status(500).json({ message: 'Password reset failed' });
+//   }
+// };
+
+const resetPassword = async (req, res) => {
+  const { email, newPassword } = req.body;
+
+  if (!email || !newPassword) {
+    return res.status(400).json({ message: 'Emai and new password are required' });
   }
 
   try {
-    const user = await userModel.findByResetCode(code);
-    if (!user) return res.status(400).json({ message: 'Invalid or expired code' });
+    const user = await userModel.findUserByEmail(email);
+    if (!user) return res.status(400).json({ message: 'User not found' });
 
     const hashed = await bcrypt.hash(newPassword, 10);
     await userModel.updatePassword(user.id, hashed);
@@ -189,11 +210,68 @@ const resendVerificationCode = async (req, res) => {
   }
 };
 
+
+const resendResetCode = async (req, res) => {
+  const { email } = req.body;
+
+  if (!email) {
+    return res.status(400).json({ message: 'Email is required' });
+  }
+
+  try {
+    const user = await userModel.findUserByEmail(email);
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Generate new code
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+
+    // Use model to update
+    await userModel.setResetCode(email, code);
+
+    // Send email
+    await sendResetCode(email, code);
+
+    res.status(200).json({ message: 'Reset code is sent to your email' });
+  } catch (err) {
+    console.error('Resend Reset Error:', err);
+    res.status(500).json({ message: 'Failed to resend verification code', error: err.message });
+  }
+};
+
+const verifyResetCode = async (req, res) => {
+  const { email, code } = req.body;
+
+  if (!email || !code) {
+    return res.status(400).json({ message: 'Email and code are required' });
+  }
+
+  const user = await userModel.findUserByEmail(email);
+  if (!user || user.reset_token !== code) {
+    return res.status(400).json({ message: 'Invalid reset code' });
+  }
+
+  // // Optional: Clear the token
+  // await userModel.updateOne(
+  //   { email },
+  //   { $unset: { reset_token: "" } }
+  // );
+
+  res.status(200).json({ message: 'Code verified successfully' });
+};
+
+
+
+
 module.exports = {
   signup,
   login,
   forgotPassword,
+  resendResetCode,
   resetPassword,
   verifyEmail,
-  resendVerificationCode
+  resendVerificationCode,
+  verifyResetCode
 };

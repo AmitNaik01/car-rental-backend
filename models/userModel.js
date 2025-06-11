@@ -56,16 +56,6 @@ const verifyUserEmail = async (userId) => {
   return result;
 };
 
-// 👉 Set password reset code and expiry
-const setResetCode = async (email, code) => {
-  const sql = `
-    UPDATE users
-    SET reset_token = ?, reset_token_expiry = DATE_ADD(NOW(), INTERVAL 1 HOUR)
-    WHERE email = ?`;
-
-  const [result] = await db.execute(sql, [code, email]);
-  return result;
-};
 
 // 👉 Find user by reset token
 const findByResetCode = async (code) => {
@@ -101,6 +91,16 @@ const updateVerificationCode = async (email, code) => {
     UPDATE users
     SET verification_code = ?, verification_expiry = DATE_ADD(NOW(), INTERVAL 15 MINUTE)
     WHERE email = ?`;
+  const [result] = await db.execute(sql, [code, email]);
+  return result;
+};
+// 👉 Set password reset code and expiry
+const setResetCode = async (email, code) => {
+  const sql = `
+    UPDATE users
+    SET reset_token = ?, reset_token_expiry = DATE_ADD(NOW(), INTERVAL 1 HOUR)
+    WHERE email = ?`;
+
   const [result] = await db.execute(sql, [code, email]);
   return result;
 };

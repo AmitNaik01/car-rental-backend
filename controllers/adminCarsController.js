@@ -361,10 +361,10 @@ exports.markCarAsComplete = async (req, res) => {
 
     await db.execute(
       'UPDATE cars SET status = ?, updated_at = NOW() WHERE id = ? AND created_by = ?',
-      ['active', car_id, userId]
+      ['Available', car_id, userId]
     );
 
-    res.json({ success: true, message: 'Car marked as active' });
+    res.json({ success: true, message: 'Car marked as Available' });
   } catch (error) {
     console.error('❌ Error marking car as complete:', error);
     res.status(500).json({ success: false, message: 'Server error' });

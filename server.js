@@ -16,6 +16,9 @@ dotenv.config();
 // Initialize app
 const app = express();
 
+
+app.use('/uploads/cars', express.static('car-rental/uploads/cars'));
+
 // ✅ Middleware to parse JSON and form data
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));

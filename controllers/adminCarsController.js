@@ -127,15 +127,18 @@ exports.uploadCarImages = async (req, res) => {
         .json({ success: false, message: "car_id is required" });
     }
 
+    // baseURL should match your domain
+    const baseURL = `https://indianradio.in/car-rental/uploads/cars`;
+
     const imageFields = {
-      front_image: files.front_image?.[0]?.filename || null,
-      rear_image: files.rear_image?.[0]?.filename || null,
-      side_image: files.side_image?.[0]?.filename || null,
-      interior_front_image: files.interior_front_image?.[0]?.filename || null,
-      interior_back_image: files.interior_back_image?.[0]?.filename || null,
+      front_image: files.front_image?.[0]?.filename ? `${baseURL}/${files.front_image[0].filename}` : null,
+      rear_image: files.rear_image?.[0]?.filename ? `${baseURL}/${files.rear_image[0].filename}` : null,
+      side_image: files.side_image?.[0]?.filename ? `${baseURL}/${files.side_image[0].filename}` : null,
+      interior_front_image: files.interior_front_image?.[0]?.filename ? `${baseURL}/${files.interior_front_image[0].filename}` : null,
+      interior_back_image: files.interior_back_image?.[0]?.filename ? `${baseURL}/${files.interior_back_image[0].filename}` : null,
     };
 
-    // Check if row exists for this car_id in car_images table
+    // Check if row exists
     const [existingRows] = await db.execute(
       "SELECT car_id FROM car_images WHERE car_id = ?",
       [car_id]
@@ -147,7 +150,6 @@ exports.uploadCarImages = async (req, res) => {
         .filter(([_, value]) => value !== null)
         .map(([key, _]) => `${key} = ?`)
         .join(", ");
-
       const updateValues = Object.values(imageFields).filter(
         (val) => val !== null
       );
@@ -170,15 +172,21 @@ exports.uploadCarImages = async (req, res) => {
       ]);
     }
 
-    res.json({
-      success: true,
+    res.json({ 
+      success: true, 
       message: "Images uploaded and saved successfully",
+      data: {
+        car_id,
+        ...imageFields,
+      },
     });
   } catch (error) {
-    console.error("❌ Error uploading images:", error);
+    console.error("❌ Error uploading images.", error);
     res.status(500).json({ success: false, message: "Server error" });
   }
 };
+
+
 
 exports.saveCarPricing = async (req, res) => {
   const {

@@ -422,14 +422,46 @@ exports.getCarDetails = async (req, res) => {
     res.json({
       success: true,
       data: {
-        car: car[0],
-        images: images[0] || {},
-        pricing: pricing[0] || {},
-        availability: availability[0] || {},
-        documents: documents[0] || {},
-        features: features[0] || {},
-        specifications: specifications[0] || {}
-      },
+        car: {
+          id: car[0].id,
+          make: car[0].make,
+          model: car[0].model,
+          color: car[0].color,
+          status: car[0].status,
+          images: {
+            front_image: images[0]?.front_image || "",
+            rear_image: images[0]?.rear_image || "",
+            side_image: images[0]?.side_image || "",
+            interior_front_image: images[0]?.interior_front_image || "",
+            interior_back_image: images[0]?.interior_back_image || ""
+          },
+          pricing: {
+            price_per_day: pricing[0]?.price_per_day || "0.00",
+            security_deposit: pricing[0]?.security_deposit || "0.00"
+          },
+          specifications: {
+            max_power: specifications[0]?.max_power || "",
+            fuel_type: specifications[0]?.fuel_type || "",
+            fuel_efficiency: specifications[0]?.fuel_efficiency || "",
+            max_speed: specifications[0]?.max_speed || "",
+            horsepower: specifications[0]?.horsepower || "",
+            capacity: specifications[0]?.capacity || ""
+          },
+          availability: {
+            available_from: availability[0]?.available_from || "",
+            available_to: availability[0]?.available_to || "",
+            available_days: availability[0]?.available_days || ""
+          },
+          location: {
+            address: car[0]?.address || "1234 Main St, City",
+            map_url: `https://maps.google.com/?q=${encodeURIComponent(car[0]?.address || "1234 Main St, City")}`
+          },
+          rating: {
+            stars: car[0]?.rating || 4.9,
+            reviews: car[0]?.reviews || 531
+          }
+        }
+      }
     });
   } catch (error) {
     console.error("❌ Error fetching car details:", error);

@@ -128,7 +128,7 @@ exports.uploadCarImages = async (req, res) => {
     }
 
     // baseURL should match your domain
-    const baseURL = `https://indianradio.in/car-rental/uploads/cars`;
+    const baseURL = `https://car-rental-backend-mtty.onrender.com/uploads/cars`;
 
     const imageFields = {
       front_image: files.front_image?.[0]?.filename ? `${baseURL}/${files.front_image[0].filename}` : null,

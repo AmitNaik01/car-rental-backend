@@ -471,8 +471,10 @@ exports.getCarDetails = async (req, res) => {
 
 exports.getAllCarsWithDetails = async (req, res) => {
   try {
-    // 1. Get all cars
-    const [cars] = await db.execute("SELECT * FROM cars");
+    const adminId = req.user.id; // Logged-in admin's ID
+
+    // 1. Get cars created by this admin
+    const [cars] = await db.execute("SELECT * FROM cars WHERE created_by = ?", [adminId]);
 
     if (cars.length === 0) {
       return res.json({ success: true, data: [] });
@@ -498,14 +500,14 @@ exports.getAllCarsWithDetails = async (req, res) => {
 
       return {
         car: {
-    ...car, // spreads all base car fields
-    images: images.find(item => item.car_id === car.id) || {},
-    pricing: pricing.find(item => item.car_id === car.id) || {},
-    availability: availability.find(item => item.car_id === car.id) || {},
-    documents: documents.find(item => item.car_id === car.id) || {},
-    features: features.find(item => item.car_id === car.id) || {},
-    specifications: specifications.find(item => item.car_id === car.id) || {}
-  }
+          ...car,
+          images: images.find(item => item.car_id === carId) || {},
+          pricing: pricing.find(item => item.car_id === carId) || {},
+          availability: availability.find(item => item.car_id === carId) || {},
+          documents: documents.find(item => item.car_id === carId) || {},
+          features: features.find(item => item.car_id === carId) || {},
+          specifications: specifications.find(item => item.car_id === carId) || {}
+        }
       };
     });
 
@@ -515,3 +517,4 @@ exports.getAllCarsWithDetails = async (req, res) => {
     res.status(500).json({ success: false, message: "Server error" });
   }
 };
+

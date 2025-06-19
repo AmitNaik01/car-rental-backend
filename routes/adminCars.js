@@ -61,6 +61,6 @@ router.post('/cars/complete', verifyToken, isAdmin, markCarAsComplete);
 // 7. Get car data 
 router.get('/cars/:car_id', getCarDetails);
 
-router.get('/cars', verifyToken, getAllCarsWithDetails);
+router.get('/cars', verifyToken, isAdmin, getAllCarsWithDetails);
 
 module.exports = router;

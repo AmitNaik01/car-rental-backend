@@ -83,8 +83,147 @@ const bookCar = async (req, res) => {
   }
 };
 
-// ✅ Export both functions in a single object
+const getAllCarsWithDetails = async (req, res) => {
+  try {
+    const [cars] = await db.execute("SELECT * FROM cars");
+    if (!cars.length) return res.json({ success: true, data: [] });
+
+    const [images] = await db.execute("SELECT * FROM car_images");
+    const [pricing] = await db.execute("SELECT * FROM car_pricing");
+    const [availability] = await db.execute(
+      `SELECT car_id, 
+              DATE_FORMAT(available_from, '%Y-%m-%d') AS available_from, 
+              DATE_FORMAT(available_to, '%Y-%m-%d') AS available_to, 
+              available_days 
+       FROM car_availability`
+    );
+    const [documents] = await db.execute("SELECT * FROM car_documents");
+    const [features] = await db.execute("SELECT * FROM car_features");
+    const [specifications] = await db.execute("SELECT * FROM car_specifications");
+
+    const result = cars.map(car => {
+      return {
+        car: {
+          ...car,
+          images: images.find(i => i.car_id === car.id) || {},
+          pricing: pricing.find(p => p.car_id === car.id) || {},
+          availability: availability.find(a => a.car_id === car.id) || {},
+          documents: documents.find(d => d.car_id === car.id) || {},
+          features: features.find(f => f.car_id === car.id) || {},
+          specifications: specifications.find(s => s.car_id === car.id) || {}
+        }
+      };
+    });
+
+    res.json({ success: true, data: result });
+  } catch (error) {
+    console.error("❌ Error fetching all car details:", error);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
+
+const getCarDetails = async (req, res) => {
+  const { car_id } = req.params;
+
+  try {
+    // 1. Basic Car Info
+    const [car] = await db.execute("SELECT * FROM cars WHERE id = ?", [car_id]);
+    if (car.length === 0) {
+      return res.status(404).json({ success: false, message: "Car not found" });
+    }
+
+    // 2. Related Tables
+    const [images] = await db.execute(
+      "SELECT * FROM car_images WHERE car_id = ?",
+      [car_id]
+    );
+
+    const [pricing] = await db.execute(
+      "SELECT * FROM car_pricing WHERE car_id = ?",
+      [car_id]
+    );
+
+    const [availability] = await db.execute(
+      `SELECT 
+        car_id,
+        DATE_FORMAT(available_from, '%Y-%m-%d') AS available_from,
+        DATE_FORMAT(available_to, '%Y-%m-%d') AS available_to,
+        available_days
+       FROM car_availability 
+       WHERE car_id = ?`,
+      [car_id]
+    );
+
+    const [documents] = await db.execute(
+      "SELECT * FROM car_documents WHERE car_id = ?",
+      [car_id]
+    );
+
+    const [features] = await db.execute(
+      "SELECT * FROM car_features WHERE car_id = ?",
+      [car_id]
+    );
+
+    const [specifications] = await db.execute(
+      "SELECT * FROM car_specifications WHERE car_id = ?",
+      [car_id]
+    );
+
+    // 3. Build Response
+    res.json({
+      success: true,
+      data: {
+        car: {
+          id: car[0].id,
+          make: car[0].make,
+          model: car[0].model,
+          color: car[0].color,
+          status: car[0].status,
+          images: {
+            front_image: images[0]?.front_image || "",
+            rear_image: images[0]?.rear_image || "",
+            side_image: images[0]?.side_image || "",
+            interior_front_image: images[0]?.interior_front_image || "",
+            interior_back_image: images[0]?.interior_back_image || ""
+          },
+          pricing: {
+            price_per_day: pricing[0]?.price_per_day || "0.00",
+            security_deposit: pricing[0]?.security_deposit || "0.00"
+          },
+          specifications: {
+            max_power: specifications[0]?.max_power || "",
+            fuel_type: specifications[0]?.fuel_type || "",
+            fuel_efficiency: specifications[0]?.fuel_efficiency || "",
+            max_speed: specifications[0]?.max_speed || "",
+            horsepower: specifications[0]?.horsepower || "",
+            capacity: specifications[0]?.capacity || ""
+          },
+          availability: {
+            available_from: availability[0]?.available_from || "",
+            available_to: availability[0]?.available_to || "",
+            available_days: availability[0]?.available_days || ""
+          },
+          location: {
+            address: car[0]?.address || "1234 Main St, City",
+            map_url: `https://maps.google.com/?q=${encodeURIComponent(car[0]?.address || "1234 Main St, City")}`
+          },
+          rating: {
+            stars: car[0]?.rating || 4.9,
+            reviews: car[0]?.reviews || 531
+          }
+        }
+      }
+    });
+  } catch (error) {
+    console.error("❌ Error fetching car details:", error);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
 module.exports = {
+  getAllCarsWithDetails,
+  getCarDetails,
   previewBooking,
   bookCar
 };

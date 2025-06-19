@@ -497,13 +497,15 @@ exports.getAllCarsWithDetails = async (req, res) => {
       const carId = car.id;
 
       return {
-        car,
-        images: images.find(item => item.car_id === carId) || {},
-        pricing: pricing.find(item => item.car_id === carId) || {},
-        availability: availability.find(item => item.car_id === carId) || {},
-        documents: documents.find(item => item.car_id === carId) || {},
-        features: features.find(item => item.car_id === carId) || {},
-        specifications: specifications.find(item => item.car_id === carId) || {}
+        car: {
+    ...car, // spreads all base car fields
+    images: images.find(item => item.car_id === car.id) || {},
+    pricing: pricing.find(item => item.car_id === car.id) || {},
+    availability: availability.find(item => item.car_id === car.id) || {},
+    documents: documents.find(item => item.car_id === car.id) || {},
+    features: features.find(item => item.car_id === car.id) || {},
+    specifications: specifications.find(item => item.car_id === car.id) || {}
+  }
       };
     });
 

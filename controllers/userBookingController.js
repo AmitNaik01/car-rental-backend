@@ -191,14 +191,8 @@ const getCarDetails = async (req, res) => {
             price_per_day: pricing[0]?.price_per_day || "0.00",
             security_deposit: pricing[0]?.security_deposit || "0.00"
           },
-          specifications: {
-            max_power: specifications[0]?.max_power || "",
-            fuel_type: specifications[0]?.fuel_type || "",
-            fuel_efficiency: specifications[0]?.fuel_efficiency || "",
-            max_speed: specifications[0]?.max_speed || "",
-            horsepower: specifications[0]?.horsepower || "",
-            capacity: specifications[0]?.capacity || ""
-          },
+          features: features || {},
+          specifications: specifications || {},
           availability: {
             available_from: availability[0]?.available_from || "",
             available_to: availability[0]?.available_to || "",

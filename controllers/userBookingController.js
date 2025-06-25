@@ -180,6 +180,9 @@ const getCarDetails = async (req, res) => {
           model: car[0].model,
           color: car[0].color,
           status: car[0].status,
+          about: car[0].about,
+          registration_number: car[0].registration_number,
+          vin: car[0].vin,
           images: {
             front_image: images[0]?.front_image || "",
             rear_image: images[0]?.rear_image || "",

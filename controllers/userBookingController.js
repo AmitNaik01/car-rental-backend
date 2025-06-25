@@ -191,8 +191,8 @@ const getCarDetails = async (req, res) => {
             price_per_day: pricing[0]?.price_per_day || "0.00",
             security_deposit: pricing[0]?.security_deposit || "0.00"
           },
-          features: features || {},
-          specifications: specifications || {},
+          features: features[0] || {}, // ⬅️ converted to plain object
+          specifications: specifications[0] || {}, // ⬅️ converted to plain object
           availability: {
             available_from: availability[0]?.available_from || "",
             available_to: availability[0]?.available_to || "",

@@ -25,6 +25,7 @@ const previewBooking = async (req, res) => {
 
     res.json({
       car_name: car.name,
+      car_image: car.front_image,
       car_number: car.car_number,
       total_hours,
       rate_per_hour: car.price_per_hour,

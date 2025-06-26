@@ -9,7 +9,7 @@ function calculateHours(start, end) {
 
 const previewBooking = async (req, res) => {
   try {
-    const { car_id, pickup_date, pickup_time, return_date, return_time, with_driver, coupon_code } = req.body;
+    const { car_id, pickup_date, pickup_time, return_date, return_time, with_driver } = req.body;
     const pickup_datetime = `${pickup_date} ${pickup_time}`;
     const return_datetime = `${return_date} ${return_time}`;
 
@@ -19,9 +19,9 @@ const previewBooking = async (req, res) => {
     const total_hours = calculateHours(pickup_datetime, return_datetime);
     const base_cost = total_hours * car.price_per_hour;
     const driver_fee = with_driver ? total_hours * 4345 : 0;
-    const discount = coupon_code === 'DISCOUNT800' ? 800 : 0;
-    const tax = Math.round(0.05 * (base_cost + driver_fee - discount));
-    const total_amount = base_cost + driver_fee - discount + tax;
+    // const discount = coupon_code === 'DISCOUNT800' ? 800 : 0;
+    const tax = Math.round(0.05 * (base_cost + driver_fee ));
+    const total_amount = base_cost + driver_fee  + tax;
 
     res.json({
       car_name: car.name,
@@ -30,7 +30,7 @@ const previewBooking = async (req, res) => {
       rate_per_hour: car.price_per_hour,
       base: base_cost,
       driver_fee,
-      discount,
+      // discount,
       tax,
       total_payable: total_amount
     });

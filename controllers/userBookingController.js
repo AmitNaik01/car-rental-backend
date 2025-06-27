@@ -16,7 +16,7 @@ const previewBooking = async (req, res) => {
     const [[car]] = await db.execute('SELECT * FROM cars WHERE id = ?', [car_id]);
     const [[car_pricing]] = await db.execute('SELECT * FROM car_pricing WHERE car_id = ?', [car_id]);
     if (!car) return res.status(404).json({ error: 'Car not found' });
-    const price_per_hour = car_pricing.price_per_day
+    const price_per_hour = car_pricing.price_per_day / 24;
 
     const total_hours = calculateHours(pickup_datetime, return_datetime);
     const base_cost = total_hours * price_per_hour;
@@ -52,7 +52,7 @@ const bookCar = async (req, res) => {
     const [[car]] = await db.execute('SELECT * FROM cars WHERE id = ?', [car_id]);
     const [[car_pricing]] = await db.execute('SELECT * FROM car_pricing WHERE car_id = ?', [car_id]);
     if (!car) return res.status(404).json({ error: 'Car not found' });
-    const price_per_hour = price_per_day;
+    const price_per_hour = car_pricing.price_per_day / 24;
 
     const total_hours = calculateHours(pickup_datetime, return_datetime);
     const base_cost = total_hours * price_per_hour;
@@ -62,7 +62,7 @@ const bookCar = async (req, res) => {
     const total_amount = base_cost + driver_fee - discount + tax;
     const coupon_code = 'Demo';
 
-    const booking_id = await Booking.create({
+    const booking  = await Booking.create({
       user_id: req.user.id,
       car_id,
       pickup_datetime,
@@ -78,7 +78,7 @@ const bookCar = async (req, res) => {
     });
 
      res.json({
-      booking_id,
+      booking_id:booking.id,
       user_id: req.user.id,
       car_id,
       pickup_datetime,

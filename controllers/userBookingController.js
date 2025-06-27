@@ -239,35 +239,48 @@ const getCarDetails = async (req, res) => {
 const getUserBookingsWithCars = async (req, res) => {
   try {
     const userId = req.user.id;
-    const [bookings] = await db.execute(`
-      SELECT 
-        b.id AS booking_id,
-        b.pickup_datetime,
-        b.return_datetime,
-        b.with_driver,
-        b.total_hours,
-        b.base_cost,
-        b.driver_fee,
-        b.tax,
-        b.discount,
-        b.total_amount,
-        b.payment_status,
-        c.id AS car_id,
-        c.car_number,
-        c.make,
-        c.model,
-        c.color,
-        ci.front_image
-      FROM bookings b
-      JOIN cars c ON b.car_id = c.id
-      LEFT JOIN car_images ci ON c.id = ci.car_id
-      WHERE b.user_id = ?
-      ORDER BY b.pickup_datetime DESC`, [userId]);
 
-    res.json({ success: true, bookings });
+    // Step 1: Get bookings by user_id
+    const [bookings] = await db.execute(
+      'SELECT * FROM bookings WHERE user_id = ? ORDER BY pickup_datetime DESC',
+      [userId]
+    );
+
+    // Step 2: For each booking, fetch car and image manually
+    const detailedBookings = await Promise.all(
+      bookings.map(async (booking) => {
+        const [[car]] = await db.execute(
+          'SELECT id, car_number, make, model, color FROM cars WHERE id = ?',
+          [booking.car_id]
+        );
+
+        const [[image]] = await db.execute(
+          'SELECT front_image FROM car_images WHERE car_id = ?',
+          [booking.car_id]
+        );
+
+        return {
+          booking_id: booking.id,
+          pickup_datetime: booking.pickup_datetime,
+          return_datetime: booking.return_datetime,
+          with_driver: booking.with_driver,
+          total_hours: booking.total_hours,
+          base_cost: booking.base_cost,
+          driver_fee: booking.driver_fee,
+          tax: booking.tax,
+          discount: booking.discount,
+          total_amount: booking.total_amount,
+          payment_status: booking.payment_status,
+          car: car || {},
+          car_image: image?.front_image || null
+        };
+      })
+    );
+
+    res.json({ success: true, bookings: detailedBookings });
   } catch (error) {
-    console.error("❌ Error fetching user bookings:", error);
-    res.status(500).json({ success: false, message: 'Failed to fetch bookings' });
+    console.error('❌ Error fetching user bookings (no joins):', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch bookings',error });
   }
 };
 

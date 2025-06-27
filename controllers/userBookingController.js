@@ -76,10 +76,21 @@ const bookCar = async (req, res) => {
       total_amount
     });
 
-    res.json({
+     res.json({
       booking_id,
+      user_id: req.user.id,
+      car_id,
+      pickup_datetime,
+      return_datetime,
+      with_driver,
+      coupon_code,
+      total_hours,
+      base_cost,
+      driver_fee,
+      discount,
+      tax,
+      total_amount,
       car_number: car.car_number,
-      total_payable: total_amount,
       message: 'Booking created. Proceed to payment.'
     });
   } catch (error) {

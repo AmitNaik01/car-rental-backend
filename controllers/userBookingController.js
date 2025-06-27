@@ -81,6 +81,7 @@ const bookCar = async (req, res) => {
       booking_id:booking.id,
       user_id: req.user.id,
       car_id,
+
       pickup_datetime,
       return_datetime,
       with_driver,
@@ -92,7 +93,7 @@ const bookCar = async (req, res) => {
       tax,
       total_amount,
       registration_number: car.registration_number,
-      message: 'Booking created. Proceed to payment.'
+      message: 'Successfull'
     });
   } catch (error) {
     console.error(error);
@@ -280,7 +281,7 @@ const getUserBookingsWithCars = async (req, res) => {
     res.json({ success: true, bookings: detailedBookings });
   } catch (error) {
     console.error('❌ Error fetching user bookings (no joins):', error);
-    res.status(500).json({ success: false, message: 'Failed to fetch bookings',error });
+    res.status(500).json({ success: false, message: 'Failed to fetch bookings' });
   }
 };
 

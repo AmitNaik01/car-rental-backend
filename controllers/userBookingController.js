@@ -14,10 +14,12 @@ const previewBooking = async (req, res) => {
     const return_datetime = `${return_date} ${return_time}`;
 
     const [[car]] = await db.execute('SELECT * FROM cars WHERE id = ?', [car_id]);
+    const [[car_pricing]] = await db.execute('SELECT * FROM car_pricing WHERE car_id = ?', [car_id]);
     if (!car) return res.status(404).json({ error: 'Car not found' });
+    const price_per_hour = car_pricing.price_per_day
 
     const total_hours = calculateHours(pickup_datetime, return_datetime);
-    const base_cost = total_hours * car.price_per_hour;
+    const base_cost = total_hours * price_per_hour;
     const driver_fee = with_driver ? total_hours * 4345 : 0;
     // const discount = coupon_code === 'DISCOUNT800' ? 800 : 0;
     const tax = Math.round(0.05 * (base_cost + driver_fee ));
@@ -28,7 +30,7 @@ const previewBooking = async (req, res) => {
       car_image: car.front_image,
       car_number: car.car_number,
       total_hours,
-      rate_per_hour: car.price_per_hour,
+      rate_per_hour: price_per_hour,
       base: base_cost,
       driver_fee,
       // discount,
@@ -43,17 +45,19 @@ const previewBooking = async (req, res) => {
 
 const bookCar = async (req, res) => {
   try {
-    const { car_id, pickup_date, pickup_time, return_date, return_time, with_driver, coupon_code } = req.body;
+    const { car_id, pickup_date, pickup_time, return_date, return_time, with_driver, discount } = req.body;
     const pickup_datetime = `${pickup_date} ${pickup_time}`;
     const return_datetime = `${return_date} ${return_time}`;
 
     const [[car]] = await db.execute('SELECT * FROM cars WHERE id = ?', [car_id]);
+    const [[car_pricing]] = await db.execute('SELECT * FROM car_pricing WHERE car_id = ?', [car_id]);
     if (!car) return res.status(404).json({ error: 'Car not found' });
+    const price_per_hour = price_per_day;
 
     const total_hours = calculateHours(pickup_datetime, return_datetime);
-    const base_cost = total_hours * car.price_per_hour;
+    const base_cost = total_hours * price_per_hour;
     const driver_fee = with_driver ? total_hours * 4345 : 0;
-    const discount = coupon_code === 'DISCOUNT800' ? 800 : 0;
+    
     const tax = Math.round(0.05 * (base_cost + driver_fee - discount));
     const total_amount = base_cost + driver_fee - discount + tax;
 

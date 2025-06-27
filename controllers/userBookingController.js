@@ -28,7 +28,7 @@ const previewBooking = async (req, res) => {
     res.json({
       car_name: car.name,
       car_image: car.front_image,
-      car_number: car.car_number,
+      registration_number: car.registration_number,
       total_hours,
       rate_per_hour: price_per_hour,
       base: base_cost,
@@ -91,7 +91,7 @@ const bookCar = async (req, res) => {
       discount,
       tax,
       total_amount,
-      car_number: car.car_number,
+      registration_number: car.registration_number,
       message: 'Booking created. Proceed to payment.'
     });
   } catch (error) {
@@ -250,7 +250,7 @@ const getUserBookingsWithCars = async (req, res) => {
     const detailedBookings = await Promise.all(
       bookings.map(async (booking) => {
         const [[car]] = await db.execute(
-          'SELECT id, car_number, make, model, color FROM cars WHERE id = ?',
+          'SELECT id, registration_number, make, model, color FROM cars WHERE id = ?',
           [booking.car_id]
         );
 
@@ -303,7 +303,7 @@ const getBookingById = async (req, res) => {
         b.total_amount,
         b.payment_status,
         c.id AS car_id,
-        c.car_number,
+        c.registration_number,
         c.make,
         c.model,
         c.color,

@@ -60,6 +60,7 @@ const bookCar = async (req, res) => {
     
     const tax = Math.round(0.05 * (base_cost + driver_fee - discount));
     const total_amount = base_cost + driver_fee - discount + tax;
+    const coupon_code = 'Demo';
 
     const booking_id = await Booking.create({
       user_id: req.user.id,
@@ -83,7 +84,7 @@ const bookCar = async (req, res) => {
       pickup_datetime,
       return_datetime,
       with_driver,
-      coupon_code,
+      // coupon_code,
       total_hours,
       base_cost,
       driver_fee,

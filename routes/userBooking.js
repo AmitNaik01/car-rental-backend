@@ -8,5 +8,8 @@ router.post('/preview', verifyToken, controller.previewBooking);
 router.post('/book', verifyToken, controller.bookCar);
 router.post('/cars', verifyToken, controller.getAllCarsWithDetails);
 router.post('/cars/:car_id', verifyToken, controller.getCarDetails);
+router.get('/my-bookings', verifyToken, controller.getUserBookingsWithCars);
+router.get('/booking/:id', verifyToken, controller.getBookingById);
+
 
 module.exports = router;

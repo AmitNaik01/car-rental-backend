@@ -235,9 +235,89 @@ const getCarDetails = async (req, res) => {
   }
 };
 
+
+const getUserBookingsWithCars = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const [bookings] = await db.execute(`
+      SELECT 
+        b.id AS booking_id,
+        b.pickup_datetime,
+        b.return_datetime,
+        b.with_driver,
+        b.total_hours,
+        b.base_cost,
+        b.driver_fee,
+        b.tax,
+        b.discount,
+        b.total_amount,
+        b.payment_status,
+        c.id AS car_id,
+        c.car_number,
+        c.make,
+        c.model,
+        c.color,
+        ci.front_image
+      FROM bookings b
+      JOIN cars c ON b.car_id = c.id
+      LEFT JOIN car_images ci ON c.id = ci.car_id
+      WHERE b.user_id = ?
+      ORDER BY b.pickup_datetime DESC`, [userId]);
+
+    res.json({ success: true, bookings });
+  } catch (error) {
+    console.error("❌ Error fetching user bookings:", error);
+    res.status(500).json({ success: false, message: 'Failed to fetch bookings' });
+  }
+};
+
+const getBookingById = async (req, res) => {
+  try {
+    const bookingId = req.params.id;
+    const userId = req.user.id;
+
+    const [results] = await db.execute(`
+      SELECT 
+        b.id AS booking_id,
+        b.pickup_datetime,
+        b.return_datetime,
+        b.with_driver,
+        b.total_hours,
+        b.base_cost,
+        b.driver_fee,
+        b.tax,
+        b.discount,
+        b.total_amount,
+        b.payment_status,
+        c.id AS car_id,
+        c.car_number,
+        c.make,
+        c.model,
+        c.color,
+        ci.front_image
+      FROM bookings b
+      JOIN cars c ON b.car_id = c.id
+      LEFT JOIN car_images ci ON c.id = ci.car_id
+      WHERE b.user_id = ? AND b.id = ?
+    `, [userId, bookingId]);
+
+    if (results.length === 0) {
+      return res.status(404).json({ success: false, message: "Booking not found" });
+    }
+
+    res.json({ success: true, booking: results[0] });
+  } catch (error) {
+    console.error("❌ Error fetching booking by ID:", error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
+
 module.exports = {
   getAllCarsWithDetails,
   getCarDetails,
   previewBooking,
-  bookCar
+  bookCar,
+  getUserBookingsWithCars,
+  getBookingById
 };

@@ -308,10 +308,13 @@ const getBookingById = async (req, res) => {
         c.make,
         c.model,
         c.color,
-        ci.front_image
+        ci.front_image,
+        cs.transmission,
+        cs.fuel_type
       FROM bookings b
       JOIN cars c ON b.car_id = c.id
       LEFT JOIN car_images ci ON c.id = ci.car_id
+      LEFT JOIN car_specifications cs ON c.id = cs.car_id
       WHERE b.user_id = ? AND b.id = ?
     `, [userId, bookingId]);
 
@@ -325,6 +328,7 @@ const getBookingById = async (req, res) => {
     res.status(500).json({ success: false, message: 'Server error' });
   }
 };
+
 
 
 module.exports = {

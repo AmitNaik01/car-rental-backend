@@ -13,13 +13,28 @@ exports.create = async ({
   driver_fee,
   tax,
   discount,
-  total_amount
+  total_amount,
+  pickup_location,
+  return_location
 }) => {
   const [result] = await db.execute(
     `INSERT INTO bookings (
-      user_id, car_id, pickup_datetime, return_datetime, with_driver, coupon_code,
-      total_hours, base_cost, driver_fee, tax, discount, total_amount, payment_status
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')`,
+      user_id,
+      car_id,
+      pickup_datetime,
+      return_datetime,
+      with_driver,
+      coupon_code,
+      total_hours,
+      base_cost,
+      driver_fee,
+      tax,
+      discount,
+      total_amount,
+      payment_status,
+      pickup_location,
+      return_location
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?)`,
     [
       user_id,
       car_id,
@@ -32,9 +47,11 @@ exports.create = async ({
       driver_fee,
       tax,
       discount,
-      total_amount
+      total_amount,
+      pickup_location,
+      return_location
     ]
   );
 
-  return result.insertId;
+  return { id: result.insertId };
 };

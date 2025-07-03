@@ -51,6 +51,8 @@ const bookCar = async (req, res) => {
 
     const [[car]] = await db.execute('SELECT * FROM cars WHERE id = ?', [car_id]);
     const [[car_pricing]] = await db.execute('SELECT * FROM car_pricing WHERE car_id = ?', [car_id]);
+if (!car_pricing) return res.status(404).json({ error: 'Car pricing not found' });
+
     if (!car) return res.status(404).json({ error: 'Car not found' });
     const price_per_hour = car_pricing.price_per_day / 24;
 
@@ -61,6 +63,9 @@ const bookCar = async (req, res) => {
     const tax = Math.round(0.05 * (base_cost + driver_fee - discount));
     const total_amount = base_cost + driver_fee - discount + tax;
     const coupon_code = 'Demo';
+    const pickup_location = "Pickup";
+    const return_location = "Return";
+
 
     const booking  = await Booking.create({
       user_id: req.user.id,
@@ -74,7 +79,9 @@ const bookCar = async (req, res) => {
       driver_fee,
       tax,
       discount,
-      total_amount
+      total_amount,
+      pickup_location,
+      return_location
     });
 
      res.json({
@@ -295,6 +302,8 @@ const getBookingById = async (req, res) => {
         b.id AS booking_id,
         b.pickup_datetime,
         b.return_datetime,
+        b.pickup_location,
+        b.return_location,
         b.with_driver,
         b.total_hours,
         b.base_cost,
@@ -329,6 +338,107 @@ const getBookingById = async (req, res) => {
   }
 };
 
+const modifyBooking = async (req, res) => {
+  try {
+    const bookingId = req.params.id;
+
+    // Get new values from request body
+    const {
+      pickup_date,
+      pickup_time,
+      return_date,
+      return_time,
+      with_driver,
+      discount,
+      pickup_location,
+      return_location
+    } = req.body;
+
+    const pickup_datetime = `${pickup_date} ${pickup_time}`;
+    const return_datetime = `${return_date} ${return_time}`;
+
+    // Fetch booking
+    const [[booking]] = await db.execute('SELECT * FROM bookings WHERE id = ?', [bookingId]);
+    if (!booking) return res.status(404).json({ error: 'Booking not found' });
+
+    // Fetch car pricing
+    const [[car_pricing]] = await db.execute('SELECT * FROM car_pricing WHERE car_id = ?', [booking.car_id]);
+    if (!car_pricing) return res.status(404).json({ error: 'Car pricing not found' });
+
+    const price_per_hour = car_pricing.price_per_day / 24;
+    const total_hours = calculateHours(pickup_datetime, return_datetime);
+    const base_cost = total_hours * price_per_hour;
+    const driver_fee = with_driver ? total_hours * 4345 : 0;
+    const tax = Math.round(0.05 * (base_cost + driver_fee - discount));
+    const total_amount = base_cost + driver_fee - discount + tax;
+    const coupon_code = 'Demo';
+
+    // Update booking
+    await db.execute(
+      `UPDATE bookings SET
+        pickup_datetime = ?,
+        return_datetime = ?,
+        with_driver = ?,
+        coupon_code = ?,
+        total_hours = ?,
+        base_cost = ?,
+        driver_fee = ?,
+        tax = ?,
+        discount = ?,
+        total_amount = ?,
+        pickup_location = ?,
+        return_location = ?,
+        updated_at = CURRENT_TIMESTAMP
+      WHERE id = ?`,
+      [
+        pickup_datetime,
+        return_datetime,
+        with_driver,
+        coupon_code,
+        total_hours,
+        base_cost,
+        driver_fee,
+        tax,
+        discount,
+        total_amount,
+        pickup_location,
+        return_location,
+        bookingId
+      ]
+    );
+
+    res.json({
+      success: true,
+      message: 'Booking modified successfully',
+      booking_id: bookingId,
+      pickup_datetime,
+      return_datetime,
+      with_driver,
+      total_hours,
+      base_cost,
+      driver_fee,
+      discount,
+      tax,
+      total_amount,
+      pickup_location,
+      return_location
+    });
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Failed to modify booking' });
+  }
+};
+
+
+// Helper
+function calculateHours(start, end) {
+  const startDate = new Date(start);
+  const endDate = new Date(end);
+  return Math.abs(endDate - startDate) / (1000 * 60 * 60);
+}
+
+
 
 
 module.exports = {
@@ -337,5 +447,6 @@ module.exports = {
   previewBooking,
   bookCar,
   getUserBookingsWithCars,
-  getBookingById
+  getBookingById,
+  modifyBooking
 };

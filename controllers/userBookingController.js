@@ -439,6 +439,38 @@ function calculateHours(start, end) {
 }
 
 
+const cancelBooking = async (req, res) => {
+  try {
+    const bookingId = req.params.id;
+    const userId = req.user.id;
+
+    // Check if booking exists and belongs to user
+    const [[booking]] = await db.execute(
+      'SELECT * FROM bookings WHERE id = ? AND user_id = ?',
+      [bookingId, userId]
+    );
+
+    if (!booking) {
+      return res.status(404).json({ success: false, message: 'Booking not found' });
+    }
+
+    if (booking.status === 'canceled') {
+      return res.status(400).json({ success: false, message: 'Booking already canceled' });
+    }
+
+    // Update status
+    await db.execute(
+      'UPDATE bookings SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND user_id = ?',
+      ['canceled', bookingId, userId]
+    );
+
+    res.json({ success: true, message: 'Booking canceled successfully', booking_id: bookingId });
+  } catch (error) {
+    console.error('❌ Error canceling booking:', error);
+    res.status(500).json({ success: false, message: 'Failed to cancel booking' });
+  }
+};
+
 
 
 module.exports = {
@@ -448,5 +480,6 @@ module.exports = {
   bookCar,
   getUserBookingsWithCars,
   getBookingById,
-  modifyBooking
+  modifyBooking,
+  cancelBooking
 };

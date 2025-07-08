@@ -11,7 +11,7 @@ router.post('/cars/:car_id', verifyToken, controller.getCarDetails);
 router.get('/my-bookings', verifyToken, controller.getUserBookingsWithCars);
 router.get('/booking/:id', verifyToken, controller.getBookingById);
 router.put('/booking/:id', verifyToken, controller.modifyBooking);
-router.delete('/bookings/:id/cancel', verifyToken, controller.cancelBooking);
+router.delete('/booking/:id/cancel', verifyToken, controller.cancelBooking);
 
 
 module.exports = router;

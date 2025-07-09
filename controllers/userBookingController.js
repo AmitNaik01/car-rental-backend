@@ -276,6 +276,7 @@ const getUserBookingsWithCars = async (req, res) => {
           base_cost: booking.base_cost,
           driver_fee: booking.driver_fee,
           tax: booking.tax,
+          status:booking.status,
           discount: booking.discount,
           total_amount: booking.total_amount,
           payment_status: booking.payment_status,

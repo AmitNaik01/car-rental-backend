@@ -532,17 +532,20 @@ exports.getUserBookingsWithCars = async (req, res) => {
     // 2. Get all related cars
     const [cars] = await db.execute("SELECT id, registration_number, make, model, color FROM cars");
     const [images] = await db.execute("SELECT car_id, front_image FROM car_images");
-    const [[user]] = await db.execute("SELECT * FROM users");
+    const [users] = await db.execute("SELECT id, first_name, last_name FROM users");
 
     // 3. Map data to each booking
     const result = bookings.map(booking => {
       const car = cars.find(item => item.id === booking.car_id) || {};
       const image = images.find(item => item.car_id === booking.car_id);
+      const user = users.find(u => u.id === booking.user_id);
+      const user_name = user ? `${user.first_name} ${user.last_name}` : null;
+
 
       return {
         ...booking,
         car,
-        user_name: user?.first_name || null,
+        user_name,
         car_image: image?.front_image || null,
       };
     });

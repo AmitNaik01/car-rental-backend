@@ -552,11 +552,9 @@ exports.getUserBookingsWithCars = async (req, res) => {
     res.status(500).json({ success: false, message: "Server error" });
   }
 };
-
 exports.getBookingById = async (req, res) => {
   try {
     const bookingId = req.params.id;
-    const userId = req.user.id;
 
     const [results] = await db.execute(
       `SELECT 
@@ -573,8 +571,8 @@ exports.getBookingById = async (req, res) => {
       JOIN cars c ON b.car_id = c.id
       LEFT JOIN car_images ci ON c.id = ci.car_id
       LEFT JOIN car_specifications cs ON c.id = cs.car_id
-      WHERE b.user_id = ? AND b.id = ?`,
-      [userId, bookingId]
+      WHERE b.id = ?`,
+      [bookingId]
     );
 
     if (results.length === 0) {
@@ -583,10 +581,11 @@ exports.getBookingById = async (req, res) => {
 
     res.json({ success: true, booking: results[0] });
   } catch (error) {
-    console.error("❌ Error fetching booking by ID:", error);
+    console.error("❌ Error fetching booking by ID (admin):", error);
     res.status(500).json({ success: false, message: "Server error" });
   }
 };
+
 
 exports.modifyBooking = async (req, res) => {
   try {

@@ -13,8 +13,8 @@ const {
   getAllCarsWithDetails,
   getUserBookingsWithCars,
   getBookingById,
-  modifyBooking,
-  cancelBooking
+  // modifyBooking,
+  // cancelBooking
 } = require('../controllers/adminCarsController');
 
 // Middleware: Auth + Role Check

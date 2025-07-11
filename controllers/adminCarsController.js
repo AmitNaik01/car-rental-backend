@@ -518,12 +518,11 @@ exports.getAllCarsWithDetails = async (req, res) => {
 
 exports.getUserBookingsWithCars = async (req, res) => {
   try {
-    const userId = req.user.id;
+    // const userId = req.user.id;
 
     // 1. Get all bookings for this user
     const [bookings] = await db.execute(
-      'SELECT * FROM bookings WHERE user_id = ? ORDER BY pickup_datetime DESC',
-      [userId]
+      'SELECT * FROM bookings ORDER BY pickup_datetime DESC'
     );
 
     if (bookings.length === 0) {
@@ -533,7 +532,7 @@ exports.getUserBookingsWithCars = async (req, res) => {
     // 2. Get all related cars
     const [cars] = await db.execute("SELECT id, registration_number, make, model, color FROM cars");
     const [images] = await db.execute("SELECT car_id, front_image FROM car_images");
-    const [[user]] = await db.execute("SELECT * FROM users WHERE id = ?", [userId]);
+    const [[user]] = await db.execute("SELECT * FROM users");
 
     // 3. Map data to each booking
     const result = bookings.map(booking => {
@@ -547,13 +546,13 @@ exports.getUserBookingsWithCars = async (req, res) => {
         car_image: image?.front_image || null,
       };
     });
-
     res.json({ success: true, bookings: result });
   } catch (error) {
     console.error("❌ Error fetching user bookings:", error);
     res.status(500).json({ success: false, message: "Server error" });
   }
 };
+
 exports.getBookingById = async (req, res) => {
   try {
     const bookingId = req.params.id;

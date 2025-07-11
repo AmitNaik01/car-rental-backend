@@ -538,11 +538,13 @@ exports.getUserBookingsWithCars = async (req, res) => {
     const result = bookings.map(booking => {
       const car = cars.find(item => item.id === booking.car_id) || {};
       const image = images.find(item => item.car_id === booking.car_id);
+      const user = user.find(u => u.id === booking.user_id);
+      const user_name = user ? user.first_name : null;
 
       return {
         ...booking,
         car,
-        user_name: user?.first_name || null,
+        user_name,
         car_image: image?.front_image || null,
       };
     });

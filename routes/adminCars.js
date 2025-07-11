@@ -10,7 +10,11 @@ const {
   uploadDocuments,
   getCarDetails,
   markCarAsComplete,
-  getAllCarsWithDetails
+  getAllCarsWithDetails,
+  getUserBookingsWithCars,
+  getBookingById,
+  modifyBooking,
+  cancelBooking
 } = require('../controllers/adminCarsController');
 
 // Middleware: Auth + Role Check
@@ -62,5 +66,23 @@ router.post('/cars/complete', verifyToken, isAdmin, markCarAsComplete);
 router.get('/cars/:car_id', getCarDetails);
 
 router.get('/cars', verifyToken, isAdmin, getAllCarsWithDetails);
+
+
+
+router.get('/my-bookings', verifyToken, getUserBookingsWithCars);
+router.get('/booking/:id', verifyToken, getBookingById);
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 module.exports = router;

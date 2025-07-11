@@ -516,3 +516,205 @@ exports.getAllCarsWithDetails = async (req, res) => {
   }
 };
 
+exports.getUserBookingsWithCars = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    // 1. Get all bookings for this user
+    const [bookings] = await db.execute(
+      'SELECT * FROM bookings WHERE user_id = ? ORDER BY pickup_datetime DESC',
+      [userId]
+    );
+
+    if (bookings.length === 0) {
+      return res.json({ success: true, bookings: [] });
+    }
+
+    // 2. Get all related cars
+    const [cars] = await db.execute("SELECT id, registration_number, make, model, color FROM cars");
+    const [images] = await db.execute("SELECT car_id, front_image FROM car_images");
+    const [[user]] = await db.execute("SELECT * FROM users WHERE id = ?", [userId]);
+
+    // 3. Map data to each booking
+    const result = bookings.map(booking => {
+      const car = cars.find(item => item.id === booking.car_id) || {};
+      const image = images.find(item => item.car_id === booking.car_id);
+
+      return {
+        ...booking,
+        car,
+        user_name: user?.first_name || null,
+        car_image: image?.front_image || null,
+      };
+    });
+
+    res.json({ success: true, bookings: result });
+  } catch (error) {
+    console.error("❌ Error fetching user bookings:", error);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+exports.getBookingById = async (req, res) => {
+  try {
+    const bookingId = req.params.id;
+    const userId = req.user.id;
+
+    const [results] = await db.execute(
+      `SELECT 
+        b.*, 
+        c.registration_number, c.make, c.model, c.color,
+        ci.front_image,
+        cs.transmission,
+        cs.fuel_type,
+        cs.max_power,
+        cs.fuel_efficiency,
+        cs.torque,
+        cs.horsepower
+      FROM bookings b
+      JOIN cars c ON b.car_id = c.id
+      LEFT JOIN car_images ci ON c.id = ci.car_id
+      LEFT JOIN car_specifications cs ON c.id = cs.car_id
+      WHERE b.user_id = ? AND b.id = ?`,
+      [userId, bookingId]
+    );
+
+    if (results.length === 0) {
+      return res.status(404).json({ success: false, message: "Booking not found" });
+    }
+
+    res.json({ success: true, booking: results[0] });
+  } catch (error) {
+    console.error("❌ Error fetching booking by ID:", error);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
+exports.modifyBooking = async (req, res) => {
+  try {
+    const bookingId = req.params.id;
+
+    const {
+      pickup_date,
+      pickup_time,
+      return_date,
+      return_time,
+      with_driver,
+      discount,
+      pickup_location,
+      return_location
+    } = req.body;
+
+    const pickup_datetime = `${pickup_date} ${pickup_time}`;
+    const return_datetime = `${return_date} ${return_time}`;
+
+    // Get booking
+    const [[booking]] = await db.execute("SELECT * FROM bookings WHERE id = ?", [bookingId]);
+    if (!booking) return res.status(404).json({ success: false, message: "Booking not found" });
+
+    // Get car pricing
+    const [[pricing]] = await db.execute("SELECT * FROM car_pricing WHERE car_id = ?", [booking.car_id]);
+    if (!pricing) return res.status(404).json({ success: false, message: "Car pricing not found" });
+
+    // Calculate costs
+    const price_per_hour = pricing.price_per_day / 24;
+    const total_hours = calculateHours(pickup_datetime, return_datetime);
+    const base_cost = total_hours * price_per_hour;
+    const driver_fee = with_driver ? total_hours * 4345 : 0;
+    const tax = Math.round(0.05 * (base_cost + driver_fee - discount));
+    const total_amount = base_cost + driver_fee - discount + tax;
+    const coupon_code = "Demo";
+
+    // Update booking
+    await db.execute(
+      `UPDATE bookings SET
+        pickup_datetime = ?,
+        return_datetime = ?,
+        with_driver = ?,
+        coupon_code = ?,
+        total_hours = ?,
+        base_cost = ?,
+        driver_fee = ?,
+        tax = ?,
+        discount = ?,
+        total_amount = ?,
+        pickup_location = ?,
+        return_location = ?,
+        updated_at = CURRENT_TIMESTAMP
+      WHERE id = ?`,
+      [
+        pickup_datetime,
+        return_datetime,
+        with_driver,
+        coupon_code,
+        total_hours,
+        base_cost,
+        driver_fee,
+        tax,
+        discount,
+        total_amount,
+        pickup_location,
+        return_location,
+        bookingId
+      ]
+    );
+
+    res.json({
+      success: true,
+      message: "Booking modified successfully",
+      booking_id: bookingId,
+      pickup_datetime,
+      return_datetime,
+      with_driver,
+      total_hours,
+      base_cost,
+      driver_fee,
+      discount,
+      tax,
+      total_amount,
+      pickup_location,
+      return_location
+    });
+  } catch (error) {
+    console.error("❌ Error modifying booking:", error);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
+exports.cancelBooking = async (req, res) => {
+  try {
+    const bookingId = req.params.id;
+    const userId = req.user.id;
+
+    // Check if booking exists and belongs to user
+    const [[booking]] = await db.execute(
+      "SELECT * FROM bookings WHERE id = ? AND user_id = ?",
+      [bookingId, userId]
+    );
+
+    if (!booking) {
+      return res.status(404).json({ success: false, message: "Booking not found" });
+    }
+
+    if (booking.status === "canceled") {
+      return res.status(400).json({ success: false, message: "Booking already canceled" });
+    }
+
+    // Update status
+    await db.execute(
+      "UPDATE bookings SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND user_id = ?",
+      ["canceled", bookingId, userId]
+    );
+
+    res.json({ success: true, message: "Booking canceled successfully", booking_id: bookingId });
+  } catch (error) {
+    console.error("❌ Error canceling booking:", error);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
+// Helper function
+function calculateHours(start, end) {
+  const startDate = new Date(start);
+  const endDate = new Date(end);
+  return Math.abs(endDate - startDate) / (1000 * 60 * 60);
+}

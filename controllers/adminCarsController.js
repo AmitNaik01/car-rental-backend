@@ -719,3 +719,90 @@ function calculateHours(start, end) {
   const endDate = new Date(end);
   return Math.abs(endDate - startDate) / (1000 * 60 * 60);
 }
+
+exports.addDriverDetails = async (req, res) => {
+  try {
+    const {
+      full_name,
+      dob,
+      address,
+      email,
+      emergency_contact,
+      joining_date,
+      rate
+    } = req.body;
+
+    await db.execute(
+      `INSERT INTO driver 
+        (full_name, dob, address, email, emergency_contact, joining_date, rate, created_at) 
+       VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`,
+      [full_name, dob, address, email, emergency_contact, joining_date, rate]
+    );
+
+    res.json({ success: true, message: "Driver details added successfully" });
+  } catch (error) {
+    console.error("❌ Error adding driver details:", error);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
+exports.uploadDriverDocuments = async (req, res) => {
+  const { driver_id } = req.body;
+  const files = req.files;
+
+  try {
+    if (!driver_id) {
+      return res
+        .status(400)
+        .json({ success: false, message: "driver_id is required" });
+    }
+
+    const docFields = {
+      license: files.license?.[0]?.filename || null,
+      pan_card: files.pan_card?.[0]?.filename || null,
+      profile_image: files.profile_image?.[0]?.filename || null,
+      aadhaar: files.aadhaar?.[0]?.filename || null,
+      bank_passbook: files.bank_passbook?.[0]?.filename || null,
+    };
+
+    const updateFields = Object.entries(docFields).filter(
+      ([_, value]) => value !== null
+    );
+
+    if (updateFields.length === 0) {
+      return res
+        .status(400)
+        .json({ success: false, message: "No documents uploaded" });
+    }
+
+    // Check if record already exists
+    const [existing] = await db.execute(
+      `SELECT * FROM driver_documents WHERE driver_id = ?`,
+      [driver_id]
+    );
+
+    if (existing.length > 0) {
+      // UPDATE existing row
+      const setClause = updateFields.map(([key]) => `${key} = ?`).join(", ");
+      const values = updateFields.map(([_, value]) => value);
+      await db.execute(
+        `UPDATE driver_documents SET ${setClause}, updated_at = CURRENT_TIMESTAMP WHERE driver_id = ?`,
+        [...values, driver_id]
+      );
+    } else {
+      // INSERT new row
+      const columns = ["driver_id", ...updateFields.map(([key]) => key)];
+      const placeholders = columns.map(() => "?").join(", ");
+      const values = [driver_id, ...updateFields.map(([_, value]) => value)];
+      await db.execute(
+        `INSERT INTO driver_documents (${columns.join(", ")}) VALUES (${placeholders})`,
+        values
+      );
+    }
+
+    res.json({ success: true, message: "Driver documents uploaded successfully" });
+  } catch (error) {
+    console.error("❌ Error uploading driver documents:", error);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};

@@ -9,15 +9,23 @@ const storage = multer.diskStorage({
     let folder = 'uploads/others/';
     const field = file.fieldname;
 
-    // Decide folder based on type of upload
+    // Car images
     if (
       ['front_image', 'rear_image', 'side_image', 'interior_front_image', 'interior_back_image'].includes(field)
     ) {
       folder = 'uploads/cars/';
-    } else if (
+    } 
+    // Car documents
+    else if (
       ['registration_certificate', 'insurance_certificate', 'pollution_certificate'].includes(field)
     ) {
       folder = 'uploads/documents/';
+    }
+    // Driver documents & profile images
+    else if (
+      ['license', 'pan_card', 'aadhaar', 'bank_passbook', 'profile_image'].includes(field)
+    ) {
+      folder = 'uploads/drivers/';
     }
 
     // Ensure folder exists
@@ -32,10 +40,17 @@ const storage = multer.diskStorage({
   }
 });
 
-// Accept JPG, PNG, and PDF for documents, images only for car images
+// Accept JPG, PNG for images; PDF, JPG, PNG for documents
 const fileFilter = (req, file, cb) => {
-  const imageFields = ['front_image', 'rear_image', 'side_image', 'interior_front_image', 'interior_back_image'];
-  const docFields = ['registration_certificate', 'insurance_certificate', 'pollution_certificate'];
+  const imageFields = [
+    'front_image', 'rear_image', 'side_image', 'interior_front_image', 'interior_back_image',
+    'profile_image' // driver profile image
+  ];
+
+  const docFields = [
+    'registration_certificate', 'insurance_certificate', 'pollution_certificate',
+    'license', 'pan_card', 'aadhaar', 'bank_passbook' // driver documents
+  ];
 
   const ext = path.extname(file.originalname).toLowerCase();
   const mime = file.mimetype;
@@ -45,7 +60,7 @@ const fileFilter = (req, file, cb) => {
     if (/jpeg|jpg|png/.test(ext) && /image\/jpeg|image\/png/.test(mime)) {
       cb(null, true);
     } else {
-      cb(new Error('Only JPEG and PNG images are allowed for car images'));
+      cb(new Error('Only JPEG and PNG images are allowed for images'));
     }
   } else if (docFields.includes(file.fieldname)) {
     // Allow image and PDF files for documents

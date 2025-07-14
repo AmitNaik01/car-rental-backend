@@ -13,6 +13,8 @@ const {
   getAllCarsWithDetails,
   getUserBookingsWithCars,
   getBookingById,
+  addDriverDetails,
+  uploadDriverDocuments
   // modifyBooking,
   // cancelBooking
 } = require('../controllers/adminCarsController');
@@ -72,6 +74,19 @@ router.get('/cars', verifyToken, isAdmin, getAllCarsWithDetails);
 router.get('/my-bookings', verifyToken, getUserBookingsWithCars);
 router.get('/booking/:id', verifyToken, getBookingById);
 
+
+router.post("/driver", addDriverDetails);
+router.post(
+  "/driver/upload-driver-documents",
+  upload.fields([
+    { name: "license", maxCount: 1 },
+    { name: "pan_card", maxCount: 1 },
+    { name: "profile_image", maxCount: 1 },
+    { name: "aadhaar", maxCount: 1 },
+    { name: "bank_passbook", maxCount: 1 }
+  ]),
+  uploadDriverDocuments
+);
 
 
 

@@ -732,19 +732,28 @@ exports.addDriverDetails = async (req, res) => {
       rate
     } = req.body;
 
-    await db.execute(
+    // Insert driver details
+    const [result] = await db.execute(
       `INSERT INTO driver 
         (full_name, dob, address, email, emergency_contact, joining_date, rate, created_at) 
        VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`,
       [full_name, dob, address, email, emergency_contact, joining_date, rate]
     );
 
-    res.json({ success: true, message: "Driver details added successfully" });
+    // Get the inserted driver ID
+    const driverId = result.insertId;
+
+    res.json({
+      success: true,
+      message: "Driver details added successfully",
+      driver_id: driverId
+    });
   } catch (error) {
     console.error("❌ Error adding driver details:", error);
     res.status(500).json({ success: false, message: "Server error" });
   }
 };
+
 
 exports.uploadDriverDocuments = async (req, res) => {
   const { driver_id } = req.body;

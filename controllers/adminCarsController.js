@@ -815,3 +815,106 @@ exports.uploadDriverDocuments = async (req, res) => {
     res.status(500).json({ success: false, message: "Server error" });
   }
 };
+
+exports.getDriverList = async (req, res) => {
+  try {
+    const [drivers] = await db.execute(
+      `SELECT 
+        d.id,
+        d.full_name,
+        d.emergency_contact,
+        d.status,
+        d.rate,
+        d.car_id,
+        c.registration_number
+      FROM driver d
+      LEFT JOIN cars c ON d.car_id = c.id
+      ORDER BY d.full_name ASC`
+    );
+
+    const driverList = drivers.map(driver => ({
+      id: driver.id,
+      full_name: driver.full_name,
+      phone_number: driver.emergency_contact,
+      status: driver.status,
+      rate: driver.rate,
+      car_number: driver.registration_number || "Not Assigned"
+    }));
+
+    res.json({ success: true, drivers: driverList });
+  } catch (error) {
+    console.error("❌ Error fetching driver list:", error);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
+exports.getDriverById = async (req, res) => {
+  try {
+    const driverId = req.params.id;
+
+    // Get driver and car details
+    const [driverRows] = await db.execute(
+      `SELECT 
+        d.*,
+        c.registration_number,
+        c.make,
+        c.model,
+        c.color
+      FROM driver d
+      LEFT JOIN cars c ON d.car_id = c.id
+      WHERE d.id = ?`,
+      [driverId]
+    );
+
+    if (driverRows.length === 0) {
+      return res.status(404).json({ success: false, message: "Driver not found" });
+    }
+
+    const driver = driverRows[0];
+
+    // Get driver documents
+    const [docRows] = await db.execute(
+      `SELECT license, pan_card, profile_image, aadhaar, bank_passbook
+       FROM driver_documents
+       WHERE driver_id = ?`,
+      [driverId]
+    );
+
+    const documents = docRows.length > 0 ? docRows[0] : {};
+
+    const driverDetails = {
+      id: driver.id,
+      full_name: driver.full_name,
+      dob: driver.dob,
+      address: driver.address,
+      email: driver.email,
+      phone_number: driver.emergency_contact,
+      joining_date: driver.joining_date,
+      rate: driver.rate,
+      created_at: driver.created_at,
+      status: driver.status,
+      trips: driver.trips,
+      car_number: driver.registration_number || "Not Assigned",
+      car_details: driver.registration_number
+        ? {
+            registration_number: driver.registration_number,
+            make: driver.make,
+            model: driver.model,
+            color: driver.color
+          }
+        : null,
+      documents: {
+        license: documents.license || null,
+        pan_card: documents.pan_card || null,
+        profile_image: documents.profile_image || null,
+        aadhaar: documents.aadhaar || null,
+        bank_passbook: documents.bank_passbook || null
+      }
+    };
+
+    res.json({ success: true, driver: driverDetails });
+  } catch (error) {
+    console.error("❌ Error fetching driver details by ID:", error);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};

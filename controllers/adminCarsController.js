@@ -918,3 +918,57 @@ exports.getDriverById = async (req, res) => {
     res.status(500).json({ success: false, message: "Server error" });
   }
 };
+
+
+
+
+exports.getAssignCarList = async (req, res) => {
+  try {
+    const adminId = req.user.id; // Logged-in admin's ID
+
+    // Only fetch required columns
+    const [cars] = await db.execute(
+      `SELECT 
+        registration_number, 
+        color, 
+        make, 
+        model, 
+        status 
+      FROM cars
+      WHERE created_by = ?`,
+      [adminId]
+    );
+
+    res.json({ success: true, cars });
+  } catch (error) {
+    console.error("❌ Error fetching simple car list:", error);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
+
+exports.assignCarToDriver = async (req, res) => {
+  try {
+    const { driver_id, car_id } = req.body;
+
+    // Check driver exists
+    const [[driver]] = await db.execute("SELECT * FROM driver WHERE id = ?", [driver_id]);
+    if (!driver) {
+      return res.status(404).json({ success: false, message: "Driver not found" });
+    }
+
+    // Check car exists
+    const [[car]] = await db.execute("SELECT * FROM cars WHERE id = ?", [car_id]);
+    if (!car) {
+      return res.status(404).json({ success: false, message: "Car not found" });
+    }
+
+    // Assign car
+    await db.execute("UPDATE driver SET car_id = ? WHERE id = ?", [car_id, driver_id]);
+
+    res.json({ success: true, message: "Car assigned to driver successfully" });
+  } catch (error) {
+    console.error("❌ Error assigning car:", error);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};

@@ -16,7 +16,9 @@ const {
   addDriverDetails,
   uploadDriverDocuments,
   getDriverList,
-  getDriverById
+  getDriverById,
+  getAssignCarList,
+  assignCarToDriver
   // modifyBooking,
   // cancelBooking
 } = require('../controllers/adminCarsController');
@@ -97,7 +99,9 @@ router.get("/driver/:id", verifyToken, getDriverById);
 
 
 
+router.get('/cars/assign-list', verifyToken, getAssignCarList);
 
+router.post('/driver/assign-car', verifyToken, assignCarToDriver);
 
 
 

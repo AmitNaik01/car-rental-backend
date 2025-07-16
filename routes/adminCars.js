@@ -17,7 +17,7 @@ const {
   uploadDriverDocuments,
   getDriverList,
   getDriverById,
-  getAssignCarList,
+  getAllAssignableCar,
   assignCarToDriver
   // modifyBooking,
   // cancelBooking
@@ -99,12 +99,12 @@ router.get("/driver/:id", verifyToken, getDriverById);
 
 
 
-router.get('/cars/assign-list', verifyToken, getAssignCarList);
+// router.get('/cars/assign-list', verifyToken, getAssignCarList);
 
 router.post('/driver/assign-car', verifyToken, assignCarToDriver);
 
 
-
+router.get('/assign-list', verifyToken, isAdmin, getAllAssignableCar);
 
 
 

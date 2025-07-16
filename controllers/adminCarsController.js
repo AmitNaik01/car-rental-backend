@@ -921,30 +921,36 @@ exports.getDriverById = async (req, res) => {
 
 
 
-
-exports.getAssignCarList = async (req, res) => {
+exports.getAllAssignableCar = async (req, res) => {
   try {
     const adminId = req.user.id; // Logged-in admin's ID
 
-    // Only fetch required columns
-    const [cars] = await db.execute(
-      `SELECT 
-        registration_number, 
-        color, 
-        make, 
-        model, 
-        status 
-      FROM cars
-      WHERE created_by = ?`,
-      [adminId]
-    );
+    // 1. Get cars created by this admin
+    const [cars] = await db.execute("SELECT * FROM cars WHERE created_by = ?", [adminId]);
 
-    res.json({ success: true, cars });
+    if (cars.length === 0) {
+      return res.json({ success: true, data: [] });
+    }
+
+    // 2. For each car, you can fetch extra data if needed (example shown)
+    const result = await Promise.all(cars.map(async (car) => {
+      // Example: Fetch car features (uncomment and adjust if needed)
+      // const [features] = await db.execute("SELECT * FROM car_features WHERE car_id = ?", [car.id]);
+
+      return {
+        ...car,
+        // features, // Uncomment if you fetch
+      };
+    }));
+
+    // 3. Send response
+    res.json({ success: true, data: result });
   } catch (error) {
-    console.error("❌ Error fetching simple car list:", error);
+    console.error("❌ Error fetching all car details:", error);
     res.status(500).json({ success: false, message: "Server error" });
   }
 };
+
 
 
 exports.assignCarToDriver = async (req, res) => {

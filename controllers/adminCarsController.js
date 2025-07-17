@@ -854,19 +854,21 @@ exports.getDriverById = async (req, res) => {
 
     // Get driver and car details
     const [driverRows] = await db.execute(
-      `SELECT 
-  d.*,
-  c.registration_number,
-  c.make,
-  c.model,
-  c.color,
-  c.status AS car_status    
-FROM driver d
-LEFT JOIN cars c ON d.car_id = c.id
-WHERE d.id = ?
-`,
-      [driverId]
-    );
+  `SELECT 
+    d.*,
+    c.registration_number,
+    c.make,
+    c.model,
+    c.color,
+    c.status AS car_status,
+    ci.front_image
+  FROM driver d
+  LEFT JOIN cars c ON d.car_id = c.id
+  LEFT JOIN car_images ci ON c.id = ci.car_id
+  WHERE d.id = ?`,
+  [driverId]
+);
+
 
     if (driverRows.length === 0) {
       return res.status(404).json({ success: false, message: "Driver not found" });
@@ -905,6 +907,7 @@ WHERE d.id = ?
             color: driver.color,
             status: driver.car_status,
             assigned_on: driver.car_assigned_on,
+            front_image: driver.front_image
             
           }
         : null,

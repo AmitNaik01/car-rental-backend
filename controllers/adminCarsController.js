@@ -853,10 +853,10 @@ exports.getDriverById = async (req, res) => {
     const driverId = req.params.id;
 
     // Get driver and car details
-    const [driverRows] = await db.execute(
+const [driverRows] = await db.execute(
   `SELECT 
     d.*,
-    c.id,
+    c.id AS car_id,
     c.registration_number,
     c.make,
     c.model,
@@ -869,6 +869,7 @@ exports.getDriverById = async (req, res) => {
   WHERE d.id = ?`,
   [driverId]
 );
+
 
 
     if (driverRows.length === 0) {
@@ -902,7 +903,7 @@ exports.getDriverById = async (req, res) => {
       car_number: driver.registration_number || "Not Assigned",
       car_details: driver.registration_number
         ? {
-          id: driver.id,
+          id: driver.car_id,
             registration_number: driver.registration_number,
             make: driver.make,
             model: driver.model,

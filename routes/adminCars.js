@@ -108,8 +108,4 @@ router.post('/driver/assign-car', verifyToken, assignCarToDriver);
 router.get('/assign-list', verifyToken, isAdmin, getAllAssignableCar);
 router.post('/driver/unassign-car', verifyToken, unassignCarFromDriver);
 
-
-
-
-
 module.exports = router;

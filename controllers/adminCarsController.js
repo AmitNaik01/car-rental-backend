@@ -956,7 +956,6 @@ exports.getAllAssignableCar = async (req, res) => {
 };
 
 
-
 exports.assignCarToDriver = async (req, res) => {
   try {
     const { driver_id, car_id } = req.body;
@@ -973,8 +972,11 @@ exports.assignCarToDriver = async (req, res) => {
       return res.status(404).json({ success: false, message: "Car not found" });
     }
 
-    // Assign car
-    await db.execute("UPDATE driver SET car_id = ? WHERE id = ?", [car_id, driver_id]);
+    // Assign car and set assignment date
+    await db.execute(
+      "UPDATE driver SET car_id = ?, car_assigned_on = NOW() WHERE id = ?",
+      [car_id, driver_id]
+    );
 
     res.json({ success: true, message: "Car assigned to driver successfully" });
   } catch (error) {

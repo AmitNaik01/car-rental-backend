@@ -855,14 +855,16 @@ exports.getDriverById = async (req, res) => {
     // Get driver and car details
     const [driverRows] = await db.execute(
       `SELECT 
-        d.*,
-        c.registration_number,
-        c.make,
-        c.model,
-        c.color
-      FROM driver d
-      LEFT JOIN cars c ON d.car_id = c.id
-      WHERE d.id = ?`,
+  d.*,
+  c.registration_number,
+  c.make,
+  c.model,
+  c.color,
+  c.status AS car_status    
+FROM driver d
+LEFT JOIN cars c ON d.car_id = c.id
+WHERE d.id = ?
+`,
       [driverId]
     );
 
@@ -900,7 +902,9 @@ exports.getDriverById = async (req, res) => {
             registration_number: driver.registration_number,
             make: driver.make,
             model: driver.model,
-            color: driver.color
+            color: driver.color,
+            status: driver.car_status
+            
           }
         : null,
       documents: {

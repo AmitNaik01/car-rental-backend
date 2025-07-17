@@ -856,6 +856,7 @@ exports.getDriverById = async (req, res) => {
     const [driverRows] = await db.execute(
   `SELECT 
     d.*,
+    c.id,
     c.registration_number,
     c.make,
     c.model,
@@ -901,6 +902,7 @@ exports.getDriverById = async (req, res) => {
       car_number: driver.registration_number || "Not Assigned",
       car_details: driver.registration_number
         ? {
+          id: driver.id,
             registration_number: driver.registration_number,
             make: driver.make,
             model: driver.model,

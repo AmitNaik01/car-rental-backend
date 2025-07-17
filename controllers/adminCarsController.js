@@ -988,3 +988,31 @@ exports.assignCarToDriver = async (req, res) => {
     res.status(500).json({ success: false, message: "Server error" });
   }
 };
+
+exports.unassignCarFromDriver = async (req, res) => {
+  try {
+    const { driver_id } = req.body;
+
+    // 1. Check if driver exists
+    const [[driver]] = await db.execute("SELECT * FROM driver WHERE id = ?", [driver_id]);
+    if (!driver) {
+      return res.status(404).json({ success: false, message: "Driver not found" });
+    }
+
+    // 2. Check if a car is currently assigned
+    if (!driver.car_id) {
+      return res.status(400).json({ success: false, message: "No car is currently assigned to this driver" });
+    }
+
+    // 3. Unassign car (set car_id and car_assigned_on to NULL)
+    await db.execute(
+      "UPDATE driver SET car_id = NULL, car_assigned_on = NULL WHERE id = ?",
+      [driver_id]
+    );
+
+    res.json({ success: true, message: "Car unassigned from driver successfully" });
+  } catch (error) {
+    console.error("❌ Error unassigning car:", error);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};

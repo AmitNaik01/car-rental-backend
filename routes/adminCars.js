@@ -18,7 +18,8 @@ const {
   getDriverList,
   getDriverById,
   getAllAssignableCar,
-  assignCarToDriver
+  assignCarToDriver,
+  unassignCarFromDriver
   // modifyBooking,
   // cancelBooking
 } = require('../controllers/adminCarsController');
@@ -105,6 +106,8 @@ router.post('/driver/assign-car', verifyToken, assignCarToDriver);
 
 
 router.get('/assign-list', verifyToken, isAdmin, getAllAssignableCar);
+router.post('/driver/unassign-car', verifyToken, unassignCarFromDriver);
+
 
 
 

@@ -903,7 +903,8 @@ WHERE d.id = ?
             make: driver.make,
             model: driver.model,
             color: driver.color,
-            status: driver.car_status
+            status: driver.car_status,
+            assigned_on: driver.car_assigned_on,
             
           }
         : null,

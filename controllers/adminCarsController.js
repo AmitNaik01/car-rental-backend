@@ -1,5 +1,6 @@
 const db = require("../config/db"); // db is already the pool
 const path = require("path");
+const fs = require('fs');
 
 exports.saveBasicInfo = async (req, res) => {
   const {

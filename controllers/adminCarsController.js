@@ -1058,49 +1058,59 @@ exports.getLoggedInUser = async (req, res) => {
     res.status(500).json({ success: false, message: "Server error" });
   }
 };
-
-
 exports.updateProfile = async (req, res) => {
   try {
     const userId = req.user.id;
     const { phone, email } = req.body;
     let newProfileImage = null;
 
+    // ✅ Check if email is already in use by another user
+    const [existing] = await db.execute(
+      `SELECT id FROM users WHERE email = ? AND id != ?`,
+      [email, userId]
+    );
+
+    if (existing.length > 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Email already in use by another user."
+      });
+    }
+
+    // ✅ Handle profile image if provided
     if (req.file && req.file.fieldname === 'profile_image') {
       newProfileImage = req.file.filename;
 
-      // 1. Get current profile image from DB
+      // 🔍 Get current image from DB
       const [[user]] = await db.execute(
         'SELECT profile_image FROM users WHERE id = ?',
         [userId]
       );
 
       if (user?.profile_image) {
-        // 2. Delete old image
         const oldPath = path.join(__dirname, '..', 'uploads', 'profiles', user.profile_image);
         if (fs.existsSync(oldPath)) {
-          fs.unlinkSync(oldPath);
+          fs.unlinkSync(oldPath); // 🗑️ Delete old image
         }
       }
 
-      // 3. Update new image path
+      // 📤 Update new profile image
       await db.execute(
         `UPDATE users SET profile_image = ? WHERE id = ?`,
         [newProfileImage, userId]
       );
     }
 
-    // 4. Update email & phone (even if no new image)
+    // 📱📧 Update phone and email
     await db.execute(
       `UPDATE users SET email = ?, phone = ? WHERE id = ?`,
       [email, phone, userId]
     );
 
-    res.json({ success: true, message: 'Profile updated successfully' });
+    return res.json({ success: true, message: 'Profile updated successfully' });
 
   } catch (err) {
     console.error('❌ Profile update error:', err);
-    res.status(500).json({ success: false, message: 'Server error' });
+    return res.status(500).json({ success: false, message: 'Server error' });
   }
 };
-

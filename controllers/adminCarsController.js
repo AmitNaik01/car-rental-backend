@@ -1019,3 +1019,87 @@ exports.unassignCarFromDriver = async (req, res) => {
     res.status(500).json({ success: false, message: "Server error" });
   }
 };
+exports.getLoggedInUser = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const [[user]] = await db.execute(
+      `SELECT 
+         id,
+         first_name,
+         last_name,
+         email,
+         phone,
+         profile_image
+       FROM users 
+       WHERE id = ?`,
+      [userId]
+    );
+
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    res.json({
+      success: true,
+      data: {
+        id: user.id,
+        name: `${user.first_name} ${user.last_name}`,
+        phone: user.phone || null,
+        email: user.email,
+        profile_image: user.profile_image
+          ? `/uploads/profiles/${user.profile_image}`
+          : null
+      }
+    });
+  } catch (err) {
+    console.error("❌ Error fetching user profile:", err);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
+
+exports.updateProfile = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { phone, email } = req.body;
+    let newProfileImage = null;
+
+    if (req.file && req.file.fieldname === 'profile_image') {
+      newProfileImage = req.file.filename;
+
+      // 1. Get current profile image from DB
+      const [[user]] = await db.execute(
+        'SELECT profile_image FROM users WHERE id = ?',
+        [userId]
+      );
+
+      if (user?.profile_image) {
+        // 2. Delete old image
+        const oldPath = path.join(__dirname, '..', 'uploads', 'profiles', user.profile_image);
+        if (fs.existsSync(oldPath)) {
+          fs.unlinkSync(oldPath);
+        }
+      }
+
+      // 3. Update new image path
+      await db.execute(
+        `UPDATE users SET profile_image = ? WHERE id = ?`,
+        [newProfileImage, userId]
+      );
+    }
+
+    // 4. Update email & phone (even if no new image)
+    await db.execute(
+      `UPDATE users SET email = ?, phone = ? WHERE id = ?`,
+      [email, phone, userId]
+    );
+
+    res.json({ success: true, message: 'Profile updated successfully' });
+
+  } catch (err) {
+    console.error('❌ Profile update error:', err);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+

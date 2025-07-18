@@ -1,4 +1,3 @@
-// utils/multerConfig.js
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
@@ -21,11 +20,16 @@ const storage = multer.diskStorage({
     ) {
       folder = 'uploads/documents/';
     }
-    // Driver documents & profile images
+    // Driver documents & profile image
     else if (
-      ['license', 'pan_card', 'aadhaar', 'bank_passbook', 'profile_image'].includes(field)
+      ['license', 'pan_card', 'aadhaar', 'bank_passbook'].includes(field)
     ) {
       folder = 'uploads/drivers/';
+    }
+    // User profile image
+    else if (field === 'profile_image') {
+      // Check if user or driver - add tag to route if needed
+      folder = req.user?.role === 'driver' ? 'uploads/drivers/' : 'uploads/profiles/';
     }
 
     // Ensure folder exists
@@ -34,7 +38,7 @@ const storage = multer.diskStorage({
   },
 
   filename: (req, file, cb) => {
-    const uniqueName = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    const uniqueName = Date.now() + '-' + Math.round(Math.random() * 1e9);
     const ext = path.extname(file.originalname);
     cb(null, uniqueName + ext);
   }
@@ -44,26 +48,24 @@ const storage = multer.diskStorage({
 const fileFilter = (req, file, cb) => {
   const imageFields = [
     'front_image', 'rear_image', 'side_image', 'interior_front_image', 'interior_back_image',
-    'profile_image' // driver profile image
+    'profile_image'
   ];
 
   const docFields = [
     'registration_certificate', 'insurance_certificate', 'pollution_certificate',
-    'license', 'pan_card', 'aadhaar', 'bank_passbook' // driver documents
+    'license', 'pan_card', 'aadhaar', 'bank_passbook'
   ];
 
   const ext = path.extname(file.originalname).toLowerCase();
   const mime = file.mimetype;
 
   if (imageFields.includes(file.fieldname)) {
-    // Only allow images
     if (/jpeg|jpg|png/.test(ext) && /image\/jpeg|image\/png/.test(mime)) {
       cb(null, true);
     } else {
-      cb(new Error('Only JPEG and PNG images are allowed for images'));
+      cb(new Error('Only JPEG and PNG images are allowed'));
     }
   } else if (docFields.includes(file.fieldname)) {
-    // Allow image and PDF files for documents
     if (/jpeg|jpg|png|pdf/.test(ext) && /image\/jpeg|image\/png|application\/pdf/.test(mime)) {
       cb(null, true);
     } else {

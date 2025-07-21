@@ -21,7 +21,8 @@ const {
   assignCarToDriver,
   unassignCarFromDriver,
   getLoggedInUser,
-  updateProfile
+  updateProfile,
+  getBookedUsersForAdmin
   // modifyBooking,
   // cancelBooking
 } = require('../controllers/adminCarsController');
@@ -112,5 +113,7 @@ router.post('/driver/unassign-car', verifyToken, unassignCarFromDriver);
 router.get('/profile', verifyToken, getLoggedInUser);
 
 router.put('/profile/update', verifyToken, upload.single('profile_image'), updateProfile);
+
+router.get('/booked-users', verifyToken, getBookedUsersForAdmin);
 
 module.exports = router;

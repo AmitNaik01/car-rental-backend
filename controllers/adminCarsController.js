@@ -516,7 +516,7 @@ exports.getAllCarsWithDetails = async (req, res) => {
     res.status(500).json({ success: false, message: "Server error" });
   }
 };
-
+/*
 exports.getUserBookingsWithCars = async (req, res) => {
   try {
     // const userId = req.user.id;
@@ -556,6 +556,60 @@ exports.getUserBookingsWithCars = async (req, res) => {
     res.status(500).json({ success: false, message: "Server error" });
   }
 };
+
+*/
+exports.getUserBookingsWithCars = async (req, res) => {
+  try {
+    const adminId = req.user.id;
+
+    // 1. Get bookings for cars created by this admin
+    const [bookings] = await db.execute(
+      `SELECT b.* FROM bookings b
+       INNER JOIN cars c ON b.car_id = c.id
+       WHERE c.created_by = ?
+       ORDER BY b.pickup_datetime DESC`,
+      [adminId]
+    );
+
+    if (bookings.length === 0) {
+      return res.json({ success: true, bookings: [] });
+    }
+
+    // 2. Get only the cars created by this admin
+    const [cars] = await db.execute(
+      `SELECT id, registration_number, make, model, color FROM cars WHERE created_by = ?`,
+      [adminId]
+    );
+
+    // 3. Get all car images
+    const [images] = await db.execute("SELECT car_id, front_image FROM car_images");
+
+    // 4. Get all users (who made the bookings)
+    const [users] = await db.execute("SELECT id, first_name, last_name FROM users");
+
+    // 5. Attach extra data to each booking
+    const result = bookings.map(booking => {
+      const car = cars.find(c => c.id === booking.car_id) || {};
+      const image = images.find(img => img.car_id === booking.car_id);
+      const user = users.find(u => u.id === booking.user_id);
+      const user_name = user ? `${user.first_name} ${user.last_name}` : null;
+
+      return {
+        ...booking,
+        car,
+        user_name,
+        car_image: image?.front_image || null,
+      };
+    });
+
+    return res.json({ success: true, bookings: result });
+
+  } catch (error) {
+    console.error("❌ Error fetching admin's bookings:", error);
+    return res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
 exports.getBookingById = async (req, res) => {
   try {
     const bookingId = req.params.id;
@@ -1112,5 +1166,43 @@ exports.updateProfile = async (req, res) => {
   } catch (err) {
     console.error('❌ Profile update error:', err);
     return res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
+exports.getBookedUsersForAdmin = async (req, res) => {
+  try {
+    const adminId = req.user.id;
+
+    // Get only the required details
+    const [rows] = await db.execute(
+      `SELECT 
+         b.id AS booking_id,
+         u.id AS user_id,
+         u.first_name,
+         u.last_name,
+         c.make AS car_make,
+         c.model AS car_model
+       FROM bookings b
+       INNER JOIN cars c ON b.car_id = c.id
+       INNER JOIN users u ON b.user_id = u.id
+       WHERE c.created_by = ?
+       ORDER BY b.pickup_datetime DESC`,
+      [adminId]
+    );
+
+    // Format results
+    const result = rows.map(row => ({
+      booking_id: row.booking_id,
+      user_id: row.user_id,
+      user_name: `${row.first_name} ${row.last_name}`,
+      car_make: row.car_make,
+      car_model: row.car_model
+    }));
+
+    return res.json({ success: true, bookings: result });
+
+  } catch (error) {
+    console.error("❌ Error fetching booked users:", error);
+    return res.status(500).json({ success: false, message: "Server error" });
   }
 };

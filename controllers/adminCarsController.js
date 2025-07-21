@@ -1216,8 +1216,10 @@ exports.getBookedUserDetails = async (req, res) => {
       `SELECT 
          b.id AS booking_id,
          b.pickup_datetime,
-         b.dropoff_datetime,
+         b.return_datetime,
          b.total_amount,
+         b.pickup_location,
+         b.return_location,
          
          u.id AS user_id,
          u.first_name AS user_first_name,
@@ -1250,12 +1252,14 @@ exports.getBookedUserDetails = async (req, res) => {
       user_name: `${row.user_first_name} ${row.user_last_name}`,
       email: row.user_email,
       phone: row.user_phone,
-      pickup_datetime: row.pickup_datetime,
-      dropoff_datetime: row.dropoff_datetime,
-      total_amount: row.total_amount,
       car_registration_number: row.registration_number,
       owner_name: `${row.owner_first_name} ${row.owner_last_name}`,
-      owner_phone: row.owner_phone
+      owner_phone: row.owner_phone,
+      pickup_location: row.pickup_location,
+      return_location: row.return_location,
+      pickup_datetime: row.pickup_datetime,
+      return_datetime: row.return_datetime,
+      total_amount: row.total_amount
     };
 
     return res.json({ success: true, booking_details: result });
@@ -1265,4 +1269,3 @@ exports.getBookedUserDetails = async (req, res) => {
     return res.status(500).json({ success: false, message: "Server error" });
   }
 };
-

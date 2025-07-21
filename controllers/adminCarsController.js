@@ -1168,15 +1168,15 @@ exports.updateProfile = async (req, res) => {
     return res.status(500).json({ success: false, message: 'Server error' });
   }
 };
-
 exports.getBookedUsersForAdmin = async (req, res) => {
   try {
     const adminId = req.user.id;
 
-    // Get only the required details
+    // Get required booking details, including status
     const [rows] = await db.execute(
       `SELECT 
          b.id AS booking_id,
+         b.status AS booking_status,
          u.id AS user_id,
          u.first_name,
          u.last_name,
@@ -1196,7 +1196,8 @@ exports.getBookedUsersForAdmin = async (req, res) => {
       user_id: row.user_id,
       user_name: `${row.first_name} ${row.last_name}`,
       car_make: row.car_make,
-      car_model: row.car_model
+      car_model: row.car_model,
+      booking_status: row.booking_status
     }));
 
     return res.json({ success: true, bookings: result });

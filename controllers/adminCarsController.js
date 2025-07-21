@@ -1207,3 +1207,62 @@ exports.getBookedUsersForAdmin = async (req, res) => {
     return res.status(500).json({ success: false, message: "Server error" });
   }
 };
+
+exports.getBookedUserDetails = async (req, res) => {
+  try {
+    const { booking_id } = req.params;
+
+    const [rows] = await db.execute(
+      `SELECT 
+         b.id AS booking_id,
+         b.pickup_datetime,
+         b.dropoff_datetime,
+         b.total_amount,
+         
+         u.id AS user_id,
+         u.first_name AS user_first_name,
+         u.last_name AS user_last_name,
+         u.email AS user_email,
+         u.phone AS user_phone,
+
+         c.registration_number,
+         owner.first_name AS owner_first_name,
+         owner.last_name AS owner_last_name,
+         owner.phone AS owner_phone
+
+       FROM bookings b
+       INNER JOIN users u ON b.user_id = u.id
+       INNER JOIN cars c ON b.car_id = c.id
+       INNER JOIN users owner ON c.created_by = owner.id
+       WHERE b.id = ?`,
+      [booking_id]
+    );
+
+    if (rows.length === 0) {
+      return res.status(404).json({ success: false, message: "Booking not found" });
+    }
+
+    const row = rows[0];
+
+    const result = {
+      booking_id: row.booking_id,
+      user_id: row.user_id,
+      user_name: `${row.user_first_name} ${row.user_last_name}`,
+      email: row.user_email,
+      phone: row.user_phone,
+      pickup_datetime: row.pickup_datetime,
+      dropoff_datetime: row.dropoff_datetime,
+      total_amount: row.total_amount,
+      car_registration_number: row.registration_number,
+      owner_name: `${row.owner_first_name} ${row.owner_last_name}`,
+      owner_phone: row.owner_phone
+    };
+
+    return res.json({ success: true, booking_details: result });
+
+  } catch (error) {
+    console.error("❌ Error fetching booking details:", error);
+    return res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+

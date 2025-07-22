@@ -472,6 +472,131 @@ const cancelBooking = async (req, res) => {
   }
 };
 
+const getUserProfile = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const [[user]] = await db.execute(
+      `SELECT 
+        id AS user_id,
+        CONCAT(first_name, ' ', last_name) AS name,
+        dob,
+        profile_image,
+        phone,
+        email,
+        gender,
+        profession
+      FROM users 
+      WHERE id = ?`, 
+      [userId]
+    );
+
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    // Format DOB to only 'YYYY-MM-DD'
+    if (user.dob) {
+      user.dob = new Date(user.dob).toISOString().split('T')[0];
+    }
+
+    // Attach full profile image path
+    const imageBaseUrl = "https://indianradio.in/car-rental/uploads/profiles/";
+    user.profile_image = user.profile_image ? imageBaseUrl + user.profile_image : null;
+
+    res.json({ success: true, profile: user });
+  } catch (error) {
+    console.error('❌ Error fetching profile:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch profile' });
+  }
+};
+
+const updateUserProfile = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const {
+      first_name,
+      last_name,
+      dob,
+      gender,
+      profession,
+      phone,
+      email
+    } = req.body;
+
+    let profileImage = null;
+
+    // If file is uploaded
+    if (req.file && req.file.fieldname === 'profile_image') {
+      profileImage = req.file.filename;
+    }
+
+    // 1. Get current user
+    const [[existingUser]] = await db.execute(
+      'SELECT profile_image FROM users WHERE id = ?',
+      [userId]
+    );
+
+    if (!existingUser) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    // 2. Build update query
+    const updateFields = [];
+    const values = [];
+
+    if (first_name) { updateFields.push('first_name = ?'); values.push(first_name); }
+    if (last_name)  { updateFields.push('last_name = ?');  values.push(last_name); }
+    if (dob)        { updateFields.push('dob = ?');        values.push(dob); }
+    if (gender)     { updateFields.push('gender = ?');     values.push(gender); }
+    if (profession) { updateFields.push('profession = ?'); values.push(profession); }
+    if (phone)      { updateFields.push('phone = ?');      values.push(phone); }
+    if (email)      { updateFields.push('email = ?');      values.push(email); }
+    if (profileImage) {
+      updateFields.push('profile_image = ?');
+      values.push(profileImage);
+    }
+
+    values.push(userId);
+
+    // 3. Perform update if fields exist
+    if (updateFields.length > 0) {
+      const updateQuery = `UPDATE users SET ${updateFields.join(', ')} WHERE id = ?`;
+      await db.execute(updateQuery, values);
+    }
+
+    // 4. Return updated user
+    const [[updatedUser]] = await db.execute(
+      `SELECT 
+        id AS user_id,
+        CONCAT(first_name, ' ', last_name) AS name,
+        dob,
+        profile_image,
+        phone,
+        email,
+        gender,
+        profession
+      FROM users WHERE id = ?`,
+      [userId]
+    );
+
+    // Format dob and image path
+    if (updatedUser.dob) {
+      updatedUser.dob = new Date(updatedUser.dob).toISOString().split('T')[0];
+    }
+
+    const imageBaseUrl = "https://indianradio.in/car-rental/uploads/profiles/";
+    updatedUser.profile_image = updatedUser.profile_image
+      ? imageBaseUrl + updatedUser.profile_image
+      : null;
+
+    res.json({ success: true, profile: updatedUser });
+
+  } catch (error) {
+    console.error('❌ Error updating profile:', error);
+    res.status(500).json({ success: false, message: 'Failed to update profile' });
+  }
+};
 
 
 module.exports = {
@@ -482,5 +607,7 @@ module.exports = {
   getUserBookingsWithCars,
   getBookingById,
   modifyBooking,
-  cancelBooking
+  cancelBooking,
+  getUserProfile,
+  updateUserProfile
 };

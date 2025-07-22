@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const upload = require('../utils/multerConfig');
 const { verifyToken } = require('../middleware/authMiddleware'); // Only verifyToken for user routes
 const controller = require('../controllers/userBookingController');
 
@@ -12,6 +13,14 @@ router.get('/my-bookings', verifyToken, controller.getUserBookingsWithCars);
 router.get('/booking/:id', verifyToken, controller.getBookingById);
 router.put('/booking/:id', verifyToken, controller.modifyBooking);
 router.delete('/booking/:id/cancel', verifyToken, controller.cancelBooking);
+router.get('/profile', verifyToken, controller.getUserProfile);
+router.put(
+  '/update-profile',
+  verifyToken,
+  upload.single('profile_image'),
+  controller.updateUserProfile
+);
+
 
 
 module.exports = router;

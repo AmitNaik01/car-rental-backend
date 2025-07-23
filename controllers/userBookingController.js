@@ -756,5 +756,6 @@ module.exports = {
   getUserDocuments,
   uploadPassportImage,
   uploadLicenseImage,
-  storeUserBankDetails
+  storeUserBankDetails,
+  getUserBankDetails
 };

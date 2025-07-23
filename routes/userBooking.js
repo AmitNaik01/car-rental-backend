@@ -38,7 +38,7 @@ router.put(
 );
 
 router.put('/bank-details', verifyToken, controller.storeUserBankDetails);
-router.get('/bank-details', verifyToken, controller.storeUserBankDetails);
+router.get('/bank-details', verifyToken, controller.getUserBankDetails);
 
 
 module.exports = router;

@@ -40,5 +40,7 @@ router.put(
 router.put('/bank-details', verifyToken, controller.storeUserBankDetails);
 router.get('/bank-details', verifyToken, controller.getUserBankDetails);
 
+router.put('/add-payment-method', verifyToken, controller.addPaymentMethod );
+router.get('/get-payment-method', verifyToken, controller.getPaymentMethods );
 
 module.exports = router;

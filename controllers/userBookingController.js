@@ -741,6 +741,57 @@ const getUserBankDetails = async (req, res) => {
   }
 };
 
+const addPaymentMethod = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const {
+      card_number,
+      account_holder_name,
+      expiry_month,
+      expiry_year,
+      cvv
+    } = req.body;
+
+    if (!card_number || !account_holder_name || !expiry_month || !expiry_year || !cvv) {
+      return res.status(400).json({ success: false, message: 'All fields are required' });
+    }
+
+    const last4 = card_number.slice(-4);
+    const masked_card = `**** **** **** ${last4}`;
+
+    await db.execute(
+      `INSERT INTO user_payment_methods 
+       (user_id, masked_card, account_holder_name, expiry_month, expiry_year) 
+       VALUES (?, ?, ?, ?, ?)`,
+      [userId, masked_card, account_holder_name, expiry_month, expiry_year]
+    );
+
+    res.json({ success: true, message: 'Payment method saved successfully' });
+  } catch (error) {
+    console.error('❌ Payment Method Save Error:', error);
+    res.status(500).json({ success: false, message: 'Internal server error' });
+  }
+};
+
+const getPaymentMethods = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const [rows] = await db.execute(
+      'SELECT id, masked_card, account_holder_name, expiry_month, expiry_year, created_at FROM user_payment_methods WHERE user_id = ? ORDER BY created_at DESC',
+      [userId]
+    );
+
+    res.json({
+      success: true,
+      paymentMethods: rows
+    });
+  } catch (error) {
+    console.error('❌ Fetch Payment Methods Error:', error);
+    res.status(500).json({ success: false, message: 'Failed to retrieve payment methods' });
+  }
+};
+
 
 module.exports = {
   getAllCarsWithDetails,
@@ -757,5 +808,7 @@ module.exports = {
   uploadPassportImage,
   uploadLicenseImage,
   storeUserBankDetails,
-  getUserBankDetails
+  getUserBankDetails,
+  addPaymentMethod,
+  getPaymentMethods
 };

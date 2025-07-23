@@ -2,7 +2,7 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 
-// Dynamic destination based on field name
+// Dynamic storage configuration
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     let folder = 'uploads/others/';
@@ -13,22 +13,29 @@ const storage = multer.diskStorage({
       ['front_image', 'rear_image', 'side_image', 'interior_front_image', 'interior_back_image'].includes(field)
     ) {
       folder = 'uploads/cars/';
-    } 
+    }
+
     // Car documents
     else if (
       ['registration_certificate', 'insurance_certificate', 'pollution_certificate'].includes(field)
     ) {
       folder = 'uploads/documents/';
     }
-    // Driver documents & profile image
+
+    // User documents (passport, license)
+    else if (['passport_image', 'license_image'].includes(field)) {
+      folder = 'uploads/users/';
+    }
+
+    // Driver documents
     else if (
       ['license', 'pan_card', 'aadhaar', 'bank_passbook'].includes(field)
     ) {
       folder = 'uploads/drivers/';
     }
+
     // User profile image
     else if (field === 'profile_image') {
-      // Check if user or driver - add tag to route if needed
       folder = req.user?.role === 'driver' ? 'uploads/drivers/' : 'uploads/profiles/';
     }
 
@@ -44,11 +51,12 @@ const storage = multer.diskStorage({
   }
 });
 
-// Accept JPG, PNG for images; PDF, JPG, PNG for documents
+// Accepted file types per field
 const fileFilter = (req, file, cb) => {
   const imageFields = [
-    'front_image', 'rear_image', 'side_image', 'interior_front_image', 'interior_back_image',
-    'profile_image'
+    'front_image', 'rear_image', 'side_image',
+    'interior_front_image', 'interior_back_image',
+    'profile_image', 'passport_image', 'license_image'
   ];
 
   const docFields = [

@@ -20,7 +20,25 @@ router.put(
   upload.single('profile_image'),
   controller.updateUserProfile
 );
+router.get('/get-user-documents', verifyToken, controller.getUserDocuments);
+// Upload passport image
+router.put(
+  '/upload-passport',
+  verifyToken,
+  upload.single('passport_image'),
+  controller.uploadPassportImage
+);
 
+// Upload license image
+router.put(
+  '/upload-license',
+  verifyToken,
+  upload.single('license_image'),
+  controller.uploadLicenseImage
+);
+
+router.post('/bank-details', verifyToken, controller.storeUserBankDetails);
+router.get('/bank-details', verifyToken, controller.storeUserBankDetails);
 
 
 module.exports = router;

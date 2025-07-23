@@ -597,6 +597,149 @@ const updateUserProfile = async (req, res) => {
     res.status(500).json({ success: false, message: 'Failed to update profile' });
   }
 };
+const getUserDocuments = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const [[user]] = await db.execute(
+      'SELECT passport_image, license_image FROM users WHERE id = ?',
+      [userId]
+    );
+
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    const baseUrl = 'https://yourdomain.com/uploads/users/';
+
+    res.json({
+      success: true,
+      documents: {
+        passport_image: user.passport_image ? baseUrl + user.passport_image : null,
+        license_image: user.license_image ? baseUrl + user.license_image : null
+      }
+    });
+  } catch (error) {
+    console.error('❌ Error fetching documents:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch documents' });
+  }
+};
+
+const uploadPassportImage = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const passportImage = req.file?.filename;
+
+    if (!passportImage) {
+      return res.status(400).json({ success: false, message: 'No passport image uploaded' });
+    }
+
+    await db.execute(
+      'UPDATE users SET passport_image = ? WHERE id = ?',
+      [passportImage, userId]
+    );
+
+    res.json({ success: true, message: 'Passport image uploaded successfully' });
+  } catch (error) {
+    console.error('❌ Passport Upload Error:', error);
+    res.status(500).json({ success: false, message: 'Upload failed' });
+  }
+};
+const uploadLicenseImage = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const licenseImage = req.file?.filename;
+
+    if (!licenseImage) {
+      return res.status(400).json({ success: false, message: 'No license image uploaded' });
+    }
+
+    await db.execute(
+      'UPDATE users SET license_image = ? WHERE id = ?',
+      [licenseImage, userId]
+    );
+
+    res.json({ success: true, message: 'License image uploaded successfully' });
+  } catch (error) {
+    console.error('❌ License Upload Error:', error);
+    res.status(500).json({ success: false, message: 'Upload failed' });
+  }
+};
+
+const storeUserBankDetails = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const {
+      full_name,
+      account_number,
+      bank_name,
+      branch_name,
+      ifsc_code,
+      account_type,
+      address_line_1,
+      address_line_2,
+      city,
+      state,
+      postal_code,
+      country
+    } = req.body;
+
+    if (
+      !full_name || !account_number || !bank_name || !ifsc_code || !account_type ||
+      !address_line_1 || !city || !state || !postal_code || !country
+    ) {
+      return res.status(400).json({ success: false, message: 'Missing required fields' });
+    }
+
+    await db.execute(
+      `INSERT INTO user_bank_details (
+        user_id, full_name, account_number, bank_name, branch_name,
+        ifsc_code, account_type, address_line_1, address_line_2,
+        city, state, postal_code, country
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        userId,
+        full_name,
+        account_number,
+        bank_name,
+        branch_name || null,
+        ifsc_code,
+        account_type,
+        address_line_1,
+        address_line_2 || null,
+        city,
+        state,
+        postal_code,
+        country
+      ]
+    );
+
+    res.json({ success: true, message: 'Bank details saved successfully' });
+  } catch (error) {
+    console.error('❌ Bank Details Save Error:', error);
+    res.status(500).json({ success: false, message: 'Failed to save bank details' });
+  }
+};
+const getUserBankDetails = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const [rows] = await db.execute(
+      'SELECT * FROM user_bank_details WHERE user_id = ? ORDER BY id DESC LIMIT 1',
+      [userId]
+    );
+
+    if (rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'No bank details found' });
+    }
+
+    res.json({ success: true, data: rows[0] });
+  } catch (error) {
+    console.error('❌ Fetch Bank Details Error:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch bank details' });
+  }
+};
 
 
 module.exports = {
@@ -609,5 +752,9 @@ module.exports = {
   modifyBooking,
   cancelBooking,
   getUserProfile,
-  updateUserProfile
+  updateUserProfile,
+  getUserDocuments,
+  uploadPassportImage,
+  uploadLicenseImage,
+  storeUserBankDetails
 };

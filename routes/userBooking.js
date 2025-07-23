@@ -37,7 +37,7 @@ router.put(
   controller.uploadLicenseImage
 );
 
-router.post('/bank-details', verifyToken, controller.storeUserBankDetails);
+router.put('/bank-details', verifyToken, controller.storeUserBankDetails);
 router.get('/bank-details', verifyToken, controller.storeUserBankDetails);
 
 

@@ -1270,32 +1270,29 @@ exports.getBookedUserDetails = async (req, res) => {
   }
 };
 
-
-exports.getAdminTransactionHistory = async (req, res) => {
+const getTransactionHistory = async (req, res) => {
   try {
-    const adminId = req.user.id;
+    const userId = req.user.id;
 
-    const [rows] = await db.execute(
-      `SELECT 
-         t.id AS transaction_id,
-         b.id AS booking_id,
-         DATE_FORMAT(b.created_at, '%d, %b %Y') AS booking_date,
-         b.total_amount AS amount,
-         b.status,
-         b.payment_status,
-         c.registration_number AS car_number
-       FROM account_transaction t
-       INNER JOIN bookings b ON t.booking_id = b.id
-       INNER JOIN cars c ON b.car_id = c.id
-       WHERE c.created_by = ?
-       ORDER BY b.created_at DESC`,
-      [adminId]
-    );
+    const [transactions] = await db.execute(`
+      SELECT 
+        t.id AS transaction_id,
+        t.transaction_date,
+        t.amount,
+        t.status,
+        t.payment_method,
+        b.id AS booking_id,
+        c.registration_number
+      FROM transactions t
+      INNER JOIN bookings b ON t.booking_id = b.id
+      INNER JOIN cars c ON b.car_id = c.id
+      WHERE t.user_id = ?
+      ORDER BY t.transaction_date DESC
+    `, [userId]);
 
-    return res.json({ success: true, transactions: rows });
-
+    res.json({ success: true, transactions });
   } catch (error) {
-    console.error("❌ Error fetching admin transaction history:", error);
-    return res.status(500).json({ success: false, message: "Server error" });
+    console.error("❌ Error fetching transaction history:", error);
+    res.status(500).json({ success: false, message: "Server error" });
   }
 };

@@ -51,23 +51,23 @@ const bookCar = async (req, res) => {
 
     const [[car]] = await db.execute('SELECT * FROM cars WHERE id = ?', [car_id]);
     const [[car_pricing]] = await db.execute('SELECT * FROM car_pricing WHERE car_id = ?', [car_id]);
-if (!car_pricing) return res.status(404).json({ error: 'Car pricing not found' });
 
     if (!car) return res.status(404).json({ error: 'Car not found' });
-    const price_per_hour = car_pricing.price_per_day / 24;
+    if (!car_pricing) return res.status(404).json({ error: 'Car pricing not found' });
 
+    const price_per_hour = car_pricing.price_per_day / 24;
     const total_hours = calculateHours(pickup_datetime, return_datetime);
     const base_cost = total_hours * price_per_hour;
     const driver_fee = with_driver ? total_hours * 4345 : 0;
-    
     const tax = Math.round(0.05 * (base_cost + driver_fee - discount));
     const total_amount = base_cost + driver_fee - discount + tax;
+
     const coupon_code = 'Demo';
     const pickup_location = "Pickup";
     const return_location = "Return";
 
-
-    const booking  = await Booking.create({
+    // ✅ Create booking
+    const booking = await Booking.create({
       user_id: req.user.id,
       car_id,
       pickup_datetime,
@@ -84,15 +84,37 @@ if (!car_pricing) return res.status(404).json({ error: 'Car pricing not found' }
       return_location
     });
 
-     res.json({
-      booking_id:booking.id,
+    let transactionCreated = false;
+
+    try {
+      // ✅ Insert transaction after successful booking
+      await db.execute(
+        `INSERT INTO transactions (user_id, booking_id, amount, payment_method, status) 
+         VALUES (?, ?, ?, ?, ?)`,
+        [
+          req.user.id,
+          booking.id,
+          total_amount,
+          'card',  // Replace with dynamic method if needed
+          'paid'
+        ]
+      );
+      transactionCreated = true;
+    } catch (transactionError) {
+      console.error('⚠️ Transaction insert failed:', transactionError);
+      // Log but don't fail the booking response
+    }
+
+    // ✅ Send final response
+    res.json({
+      success: true,
+      message: 'Booking created successfully',
+      booking_id: booking.id,
       user_id: req.user.id,
       car_id,
-
       pickup_datetime,
       return_datetime,
       with_driver,
-      // coupon_code,
       total_hours,
       base_cost,
       driver_fee,
@@ -100,11 +122,12 @@ if (!car_pricing) return res.status(404).json({ error: 'Car pricing not found' }
       tax,
       total_amount,
       registration_number: car.registration_number,
-      message: 'Successfull'
+      transaction_created: transactionCreated
     });
+
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'Booking failed' });
+    console.error('❌ Booking error:', error);
+    res.status(500).json({ success: false, message: 'Booking failed' });
   }
 };
 

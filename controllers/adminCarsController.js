@@ -1269,3 +1269,33 @@ exports.getBookedUserDetails = async (req, res) => {
     return res.status(500).json({ success: false, message: "Server error" });
   }
 };
+
+
+exports.getAdminTransactionHistory = async (req, res) => {
+  try {
+    const adminId = req.user.id;
+
+    const [rows] = await db.execute(
+      `SELECT 
+         t.id AS transaction_id,
+         b.id AS booking_id,
+         DATE_FORMAT(b.created_at, '%d, %b %Y') AS booking_date,
+         b.total_amount AS amount,
+         b.status,
+         b.payment_status,
+         c.registration_number AS car_number
+       FROM account_transaction t
+       INNER JOIN bookings b ON t.booking_id = b.id
+       INNER JOIN cars c ON b.car_id = c.id
+       WHERE c.created_by = ?
+       ORDER BY b.created_at DESC`,
+      [adminId]
+    );
+
+    return res.json({ success: true, transactions: rows });
+
+  } catch (error) {
+    console.error("❌ Error fetching admin transaction history:", error);
+    return res.status(500).json({ success: false, message: "Server error" });
+  }
+};

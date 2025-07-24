@@ -120,7 +120,7 @@ router.get('/booked-users', verifyToken, getBookedUsersForAdmin);
 router.get('/booked-user/:booking_id', verifyToken, getBookedUserDetails);
 
 router.get(
-  '/admin/transaction-history',
+  '/transaction-history',
   verifyToken, // middleware to ensure admin auth
   getAdminTransactionHistory
 );

@@ -1270,7 +1270,7 @@ exports.getBookedUserDetails = async (req, res) => {
   }
 };
 
-const getTransactionHistory = async (req, res) => {
+exports.getTransactionHistory = async (req, res) => {
   try {
     const userId = req.user.id;
 

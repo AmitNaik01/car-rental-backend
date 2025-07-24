@@ -24,7 +24,7 @@ const {
   updateProfile,
   getBookedUsersForAdmin,
   getBookedUserDetails,
-  getAdminTransactionHistory
+  getTransactionHistory
   // modifyBooking,
   // cancelBooking
 } = require('../controllers/adminCarsController');
@@ -119,9 +119,6 @@ router.put('/profile/update', verifyToken, upload.single('profile_image'), updat
 router.get('/booked-users', verifyToken, getBookedUsersForAdmin);
 router.get('/booked-user/:booking_id', verifyToken, getBookedUserDetails);
 
-router.get(
-  '/transaction-history',
-  verifyToken, // middleware to ensure admin auth
-  getAdminTransactionHistory
-);
+router.get( '/transaction-history', verifyToken,  getTransactionHistory );
+
 module.exports = router;

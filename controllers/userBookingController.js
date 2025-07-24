@@ -792,6 +792,44 @@ const getPaymentMethods = async (req, res) => {
   }
 };
 
+const getBookingHistory = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const [rows] = await db.execute(
+      `SELECT 
+         b.id AS booking_id,
+         b.pickup_datetime,
+         b.total_amount,
+         c.registration_number,
+         ci.front_image
+       FROM bookings b
+       INNER JOIN cars c ON b.car_id = c.id
+       LEFT JOIN car_images ci ON ci.car_id = c.id
+       WHERE b.user_id = ?
+       ORDER BY b.pickup_datetime DESC`,
+      [userId]
+    );
+
+    // Format response
+    const result = rows.map(row => ({
+      booking_id: row.booking_id,
+      registration_number: row.registration_number,
+      pickup_datetime: row.pickup_datetime,
+      total_amount: row.total_amount,
+      car_image: row.front_image
+        ? `https://indianradio.in/car-rental/uploads/cars/${row.front_image}`
+        : null
+    }));
+
+    res.json({ success: true, bookings: result });
+
+  } catch (error) {
+    console.error("❌ Error fetching booking history:", error);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
 
 module.exports = {
   getAllCarsWithDetails,
@@ -810,5 +848,6 @@ module.exports = {
   storeUserBankDetails,
   getUserBankDetails,
   addPaymentMethod,
-  getPaymentMethods
+  getPaymentMethods,
+  getBookingHistory
 };

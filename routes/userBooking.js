@@ -43,4 +43,6 @@ router.get('/bank-details', verifyToken, controller.getUserBankDetails);
 router.put('/add-payment-method', verifyToken, controller.addPaymentMethod );
 router.get('/get-payment-method', verifyToken, controller.getPaymentMethods );
 
+router.get('/booking-history', verifyToken, controller.getBookingHistory);
+
 module.exports = router;

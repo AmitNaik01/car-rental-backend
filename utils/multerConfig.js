@@ -39,6 +39,11 @@ const storage = multer.diskStorage({
       folder = req.user?.role === 'driver' ? 'uploads/drivers/' : 'uploads/profiles/';
     }
 
+    // Support form images
+    else if (field === 'support_images') {
+      folder = 'uploads/support/';
+    }
+
     // Ensure folder exists
     fs.mkdirSync(folder, { recursive: true });
     cb(null, folder);
@@ -56,7 +61,8 @@ const fileFilter = (req, file, cb) => {
   const imageFields = [
     'front_image', 'rear_image', 'side_image',
     'interior_front_image', 'interior_back_image',
-    'profile_image', 'passport_image', 'license_image'
+    'profile_image', 'passport_image', 'license_image',
+    'support_images' // ✅ Added
   ];
 
   const docFields = [

@@ -45,4 +45,12 @@ router.get('/get-payment-method', verifyToken, controller.getPaymentMethods );
 
 router.get('/booking-history', verifyToken, controller.getBookingHistory);
 
+
+router.post(
+  '/support/submit',
+  verifyToken,
+  upload.array('support_images', 4), // max 4 images
+  controller.submitSupportRequest
+);
+
 module.exports = router;

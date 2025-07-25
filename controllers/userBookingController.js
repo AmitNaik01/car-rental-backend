@@ -852,6 +852,38 @@ const getBookingHistory = async (req, res) => {
     res.status(500).json({ success: false, message: "Server error" });
   }
 };
+const submitSupportRequest = async (req, res) => {
+  try {
+    const { first_name, last_name, car_number, accident_location, message } = req.body;
+    const user_id = req.user.id;
+
+    // Get car & admin info
+    const [[car]] = await db.execute(
+      `SELECT id AS car_id, created_by AS admin_id FROM cars WHERE registration_number = ?`,
+      [car_number]
+    );
+
+    if (!car) return res.status(404).json({ success: false, message: "Car not found" });
+
+    // Get uploaded image file names (up to 4)
+    const images = req.files.map((file, index) => file.filename);
+    const [img1, img2, img3, img4] = [...images, '', '', '', '']; // fill missing with empty
+
+    // Insert into DB
+    await db.execute(
+      `INSERT INTO support_requests 
+      (user_id, admin_id, car_id, first_name, last_name, car_number, accident_location, message, image_1, image_2, image_3, image_4)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [user_id, car.admin_id, car.car_id, first_name, last_name, car_number, accident_location, message, img1, img2, img3, img4]
+    );
+
+    res.json({ success: true, message: 'Support request submitted successfully' });
+  } catch (error) {
+    console.error('❌ Error submitting support request:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
 
 
 module.exports = {
@@ -872,5 +904,6 @@ module.exports = {
   getUserBankDetails,
   addPaymentMethod,
   getPaymentMethods,
-  getBookingHistory
+  getBookingHistory,
+  submitSupportRequest
 };

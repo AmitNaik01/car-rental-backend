@@ -1296,3 +1296,39 @@ exports.getTransactionHistory = async (req, res) => {
     res.status(500).json({ success: false, message: "Server error" });
   }
 };
+
+exports.getCarBookings = async (req, res) => {
+  try {
+    const { car_id } = req.params;
+
+    const [rows] = await db.execute(`
+      SELECT 
+        b.id AS booking_id,
+        b.pickup_datetime,
+        b.return_datetime,
+        u.id AS user_id,
+        CONCAT(u.first_name, ' ', u.last_name) AS user_name,
+        u.profile_image
+      FROM bookings b
+      JOIN users u ON b.user_id = u.id
+      WHERE b.car_id = ?
+      ORDER BY b.pickup_datetime DESC
+    `, [car_id]);
+
+    const result = rows.map(row => ({
+      booking_id: row.booking_id,
+      user_id: row.user_id,
+      user_name: row.user_name,
+      profile_image: row.profile_image
+        ? `https://indianradio.in/car-rental/uploads/profiles/${row.profile_image}`
+        : null,
+      pickup_datetime: row.pickup_datetime,
+      return_datetime: row.return_datetime
+    }));
+
+    res.json({ success: true, bookings: result });
+  } catch (error) {
+    console.error("❌ Error fetching car bookings:", error);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};

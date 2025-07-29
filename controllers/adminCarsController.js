@@ -1332,3 +1332,40 @@ exports.getCarBookings = async (req, res) => {
     res.status(500).json({ success: false, message: "Server error" });
   }
 };
+
+exports.getCarBookingSummary = async (req, res) => {
+  try {
+    const adminId = req.user.id; // logged-in admin ID from token
+
+    const [rows] = await db.execute(`
+      SELECT 
+        c.id AS car_id,
+        CONCAT(c.make, ' ', c.model) AS car_name,
+        c.registration_number,
+        cp.price_per_day,
+        ci.front_image,
+        COUNT(b.id) AS booking_count
+      FROM cars c
+      LEFT JOIN car_images ci ON ci.car_id = c.id
+      LEFT JOIN car_pricing cp ON cp.car_id = c.id
+      LEFT JOIN bookings b ON b.car_id = c.id
+      WHERE c.created_by = ?
+      GROUP BY c.id
+      ORDER BY booking_count DESC
+    `, [adminId]);
+
+    const formatted = rows.map(row => ({
+      car_id: row.car_id,
+      car_name: row.car_name,
+      registration_number: row.registration_number,
+      price_per_day: `₹${row.price_per_day}/day`,
+      front_image: row.front_image || null,
+      booking_count: row.booking_count
+    }));
+
+    res.json({ success: true, cars: formatted });
+  } catch (error) {
+    console.error('❌ Error fetching car booking summary:', error);
+    res.status(500).json({ success: false, message: 'Internal server error' });
+  }
+};

@@ -25,7 +25,8 @@ const {
   getBookedUsersForAdmin,
   getBookedUserDetails,
   getTransactionHistory,
-  getCarBookings
+  getCarBookings,
+  getCarBookingSummary
   // modifyBooking,
   // cancelBooking
 } = require('../controllers/adminCarsController');
@@ -124,6 +125,6 @@ router.get( '/transaction-history', verifyToken,  getTransactionHistory );
 router.get('/car/:car_id/bookings', verifyToken, getCarBookings);
 
 
-
+router.get('/car-booking-summary', verifyToken, getCarBookingSummary);
 
 module.exports = router;

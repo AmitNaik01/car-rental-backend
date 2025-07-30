@@ -1417,7 +1417,8 @@ exports.getAdminDashboardData = async (req, res) => {
     `);
 
     const [[monthNameResult]] = await db.execute(`
-      SELECT MONTHNAME(CURDATE()) AS currentMonthName
+      SELECT MONTHNAME(NOW()) AS currentMonthName
+
     `);
 
     res.json({
@@ -1435,7 +1436,7 @@ exports.getAdminDashboardData = async (req, res) => {
     });
 
   } catch (error) {
-    console.error("❌ Error fetching admin dashboard:", error);
-    res.status(500).json({ success: false, message: "Server error" });
-  }
+  console.error("❌ Error fetching admin dashboard:", error);
+  res.status(500).json({ success: false, message: error.message });
+}
 };

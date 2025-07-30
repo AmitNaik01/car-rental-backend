@@ -1385,3 +1385,58 @@ exports.getCarBookingSummary = async (req, res) => {
     res.status(500).json({ success: false, message: 'Internal server error' });
   }
 };
+
+exports.getAdminDashboardData = async (req, res) => {
+  try {
+    const adminId = req.user.id; // Assuming req.user has admin ID
+
+    // Admin name
+    const [[admin]] = await db.execute(
+      `SELECT name FROM admins WHERE id = ?`,
+      [adminId]
+    );
+
+    // Total cars listed
+    const [[carStats]] = await db.execute(
+      `SELECT COUNT(*) AS totalCarsListed FROM cars`
+    );
+
+    // Today's booking count
+    const [[bookingStats]] = await db.execute(
+      `SELECT COUNT(*) AS todaysBookingCount
+       FROM bookings
+       WHERE DATE(booking_date) = CURDATE()`
+    );
+
+    // Current month earnings
+    const [[monthStats]] = await db.execute(
+      `SELECT COALESCE(SUM(amount), 0) AS currentMonthEarnings
+       FROM transactions
+       WHERE MONTH(transaction_date) = MONTH(CURDATE())
+         AND YEAR(transaction_date) = YEAR(CURDATE())`
+    );
+
+    // Total earnings
+    const [[totalStats]] = await db.execute(
+      `SELECT COALESCE(SUM(amount), 0) AS totalEarnings
+       FROM transactions`
+    );
+
+    res.json({
+      success: true,
+      admin: {
+        name: admin.name
+      },
+      stats: {
+        totalCarsListed: carStats.totalCarsListed,
+        todaysBookingCount: bookingStats.todaysBookingCount,
+        currentMonthEarnings: monthStats.currentMonthEarnings,
+        totalEarnings: totalStats.totalEarnings
+      }
+    });
+
+  } catch (error) {
+    console.error("❌ Error fetching admin dashboard:", error);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};

@@ -26,7 +26,8 @@ const {
   getBookedUserDetails,
   getTransactionHistory,
   getCarBookings,
-  getCarBookingSummary
+  getCarBookingSummary,
+  getAdminDashboardData
   // modifyBooking,
   // cancelBooking
 } = require('../controllers/adminCarsController');
@@ -126,5 +127,5 @@ router.get('/car/:car_id/bookings', verifyToken, getCarBookings);
 
 
 router.get('/car-booking-summary', verifyToken, getCarBookingSummary);
-
+router.get('/dashboard', verifyToken, getAdminDashboardData);
 module.exports = router;

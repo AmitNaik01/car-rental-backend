@@ -1392,9 +1392,9 @@ exports.getAdminDashboardData = async (req, res) => {
 
     // Admin name
     const [[admin]] = await db.execute(
-      `SELECT name FROM admins WHERE id = ?`,
-      [adminId]
-    );
+  `SELECT name FROM users WHERE id = ? AND role = 'admin'`,
+  [adminId]
+);
 
     // Total cars listed
     const [[carStats]] = await db.execute(

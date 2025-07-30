@@ -1388,39 +1388,39 @@ exports.getCarBookingSummary = async (req, res) => {
 
 exports.getAdminDashboardData = async (req, res) => {
   try {
-    const adminId = req.user.id; // Assuming req.user has admin ID
+    const adminId = req.user.id;
 
-    // Admin name
+    // Get admin name from `users` table
     const [[admin]] = await db.execute(
-  `SELECT name FROM users WHERE id = ? AND role = 'admin'`,
-  [adminId]
-);
+      `SELECT CONCAT(first_name, ' ', last_name) AS name FROM users WHERE id = ? AND role = 'admin'`,
+      [adminId]
+    );
 
     // Total cars listed
-    const [[carStats]] = await db.execute(
-      `SELECT COUNT(*) AS totalCarsListed FROM cars`
-    );
+    const [[carStats]] = await db.execute(`
+      SELECT COUNT(*) AS totalCarsListed FROM cars
+    `);
 
-    // Today's booking count
-    const [[bookingStats]] = await db.execute(
-      `SELECT COUNT(*) AS todaysBookingCount
-       FROM bookings
-       WHERE DATE(booking_date) = CURDATE()`
-    );
+    // Today's bookings count
+    const [[bookingStats]] = await db.execute(`
+      SELECT COUNT(*) AS todaysBookingCount
+      FROM bookings
+      WHERE DATE(created_at) = CURDATE()
+    `);
 
     // Current month earnings
-    const [[monthStats]] = await db.execute(
-      `SELECT COALESCE(SUM(amount), 0) AS currentMonthEarnings
-       FROM transactions
-       WHERE MONTH(transaction_date) = MONTH(CURDATE())
-         AND YEAR(transaction_date) = YEAR(CURDATE())`
-    );
+    const [[monthStats]] = await db.execute(`
+      SELECT COALESCE(SUM(total_amount), 0) AS currentMonthEarnings
+      FROM bookings
+      WHERE MONTH(created_at) = MONTH(CURDATE())
+        AND YEAR(created_at) = YEAR(CURDATE())
+    `);
 
     // Total earnings
-    const [[totalStats]] = await db.execute(
-      `SELECT COALESCE(SUM(amount), 0) AS totalEarnings
-       FROM transactions`
-    );
+    const [[totalStats]] = await db.execute(`
+      SELECT COALESCE(SUM(total_amount), 0) AS totalEarnings
+      FROM bookings
+    `);
 
     res.json({
       success: true,

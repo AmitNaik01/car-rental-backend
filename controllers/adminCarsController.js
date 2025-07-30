@@ -1269,11 +1269,11 @@ exports.getBookedUserDetails = async (req, res) => {
     return res.status(500).json({ success: false, message: "Server error" });
   }
 };
-
 exports.getTransactionHistory = async (req, res) => {
   try {
     const userId = req.user.id;
 
+    // Fetch all transactions
     const [transactions] = await db.execute(`
       SELECT 
         t.id AS transaction_id,
@@ -1290,7 +1290,23 @@ exports.getTransactionHistory = async (req, res) => {
       ORDER BY t.transaction_date DESC
     `, [userId]);
 
-    res.json({ success: true, transactions });
+    // Fetch total bookings and total amount
+    const [[summary]] = await db.execute(`
+      SELECT 
+        COUNT(t.id) AS total_bookings,
+        COALESCE(SUM(t.amount), 0) AS total_amount
+      FROM transactions t
+      WHERE t.user_id = ?
+    `, [userId]);
+
+    res.json({
+      success: true,
+      transactions,
+      summary: {
+        totalBookings: summary.total_bookings,
+        totalAmount: summary.total_amount
+      }
+    });
   } catch (error) {
     console.error("❌ Error fetching transaction history:", error);
     res.status(500).json({ success: false, message: "Server error" });

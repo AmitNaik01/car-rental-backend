@@ -1389,21 +1389,25 @@ exports.getAdminDashboardData = async (req, res) => {
   try {
     const adminId = req.user.id;
 
+    // Get admin name from `users` table
     const [[admin]] = await db.execute(
       `SELECT CONCAT(first_name, ' ', last_name) AS name FROM users WHERE id = ? AND role = 'admin'`,
       [adminId]
     );
 
+    // Total cars listed
     const [[carStats]] = await db.execute(`
       SELECT COUNT(*) AS totalCarsListed FROM cars
     `);
 
+    // Today's bookings count
     const [[bookingStats]] = await db.execute(`
       SELECT COUNT(*) AS todaysBookingCount
       FROM bookings
       WHERE DATE(created_at) = CURDATE()
     `);
 
+    // Current month earnings
     const [[monthStats]] = await db.execute(`
       SELECT COALESCE(SUM(total_amount), 0) AS currentMonthEarnings
       FROM bookings
@@ -1411,14 +1415,10 @@ exports.getAdminDashboardData = async (req, res) => {
         AND YEAR(created_at) = YEAR(CURDATE())
     `);
 
+    // Total earnings
     const [[totalStats]] = await db.execute(`
       SELECT COALESCE(SUM(total_amount), 0) AS totalEarnings
       FROM bookings
-    `);
-
-    const [[monthNameResult]] = await db.execute(`
-      SELECT MONTHNAME(NOW()) AS currentMonthName
-
     `);
 
     res.json({
@@ -1430,13 +1430,17 @@ exports.getAdminDashboardData = async (req, res) => {
         totalCarsListed: carStats.totalCarsListed,
         todaysBookingCount: bookingStats.todaysBookingCount,
         currentMonthEarnings: monthStats.currentMonthEarnings,
-        totalEarnings: totalStats.totalEarnings,
-        currentMonth: monthNameResult.currentMonthName
+        totalEarnings: totalStats.totalEarnings
       }
     });
 
   } catch (error) {
-  console.error("❌ Error fetching admin dashboard:", error);
-  res.status(500).json({ success: false, message: error.message });
+  console.error("❌ Error fetching admin dashboard:", error); // this prints to console
+  res.status(500).json({ 
+    success: false, 
+    message: error.message,  // this will show you the real reason
+    stack: error.stack        // (optional) shows where it failed
+  });
 }
+
 };

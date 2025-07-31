@@ -263,11 +263,28 @@ const verifyResetCode = async (req, res) => {
 };
 
 
+// controllers/authController.js
+
+const logout = async (req, res) => {
+  try {
+    // Optionally log the event
+    console.log(`🔓 User ${req.user?.id} logged out`);
+
+    res.status(200).json({
+      success: true,
+      message: "Logged out successfully. Please clear token on client side."
+    });
+  } catch (error) {
+    console.error("❌ Logout error:", error);
+    res.status(500).json({ success: false, message: "Logout failed" });
+  }
+};
 
 
 module.exports = {
   signup,
   login,
+  logout,
   forgotPassword,
   resendResetCode,
   resetPassword,

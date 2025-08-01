@@ -24,6 +24,7 @@ const verifyRazorpayPayment = async (req, res) => {
     const booking = await Booking.create({
       user_id: req.user.id,
       car_id: booking_details.car_id,
+      registration_number: booking_details.registration_number,
       pickup_datetime: booking_details.pickup_datetime,
       return_datetime: booking_details.return_datetime,
       with_driver: booking_details.with_driver,

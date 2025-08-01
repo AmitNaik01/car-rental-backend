@@ -148,6 +148,7 @@ const bookCar = async (req, res) => {
     const driver_fee = with_driver ? total_hours * 4345 : 0;
     const tax = Math.round(0.05 * (base_cost + driver_fee - discount));
     const total_amount = Math.round(base_cost + driver_fee - discount + tax);
+    const registration_number = car.registration_number;
 
     // ✅ Razorpay order
     const order = await razorpay.orders.create({
@@ -165,6 +166,7 @@ const bookCar = async (req, res) => {
       amount: total_amount,
       booking_preview: {
         car_id,
+        registration_number,
         pickup_datetime,
         return_datetime,
         with_driver,

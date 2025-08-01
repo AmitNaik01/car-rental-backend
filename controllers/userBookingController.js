@@ -1,5 +1,6 @@
 const db = require('../config/db');
 const Booking = require('../models/userBookingModel');
+const razorpay = require('../utils/razorpayInstance');
 
 function calculateHours(start, end) {
   const s = new Date(start);
@@ -43,6 +44,94 @@ const previewBooking = async (req, res) => {
   }
 };
 
+// const bookCar = async (req, res) => {
+//   try {
+//     const { car_id, pickup_date, pickup_time, return_date, return_time, with_driver, discount } = req.body;
+//     const pickup_datetime = `${pickup_date} ${pickup_time}`;
+//     const return_datetime = `${return_date} ${return_time}`;
+
+//     const [[car]] = await db.execute('SELECT * FROM cars WHERE id = ?', [car_id]);
+//     const [[car_pricing]] = await db.execute('SELECT * FROM car_pricing WHERE car_id = ?', [car_id]);
+
+//     if (!car) return res.status(404).json({ error: 'Car not found' });
+//     if (!car_pricing) return res.status(404).json({ error: 'Car pricing not found' });
+
+//     const price_per_hour = car_pricing.price_per_day / 24;
+//     const total_hours = calculateHours(pickup_datetime, return_datetime);
+//     const base_cost = total_hours * price_per_hour;
+//     const driver_fee = with_driver ? total_hours * 4345 : 0;
+//     const tax = Math.round(0.05 * (base_cost + driver_fee - discount));
+//     const total_amount = base_cost + driver_fee - discount + tax;
+
+//     const coupon_code = 'Demo';
+//     const pickup_location = "Pickup";
+//     const return_location = "Return";
+
+//     // ✅ Create booking
+//     const booking = await Booking.create({
+//       user_id: req.user.id,
+//       car_id,
+//       pickup_datetime,
+//       return_datetime,
+//       with_driver,
+//       coupon_code,
+//       total_hours,
+//       base_cost,
+//       driver_fee,
+//       tax,
+//       discount,
+//       total_amount,
+//       pickup_location,
+//       return_location
+//     });
+
+//     let transactionCreated = false;
+
+//     try {
+//       // ✅ Insert transaction after successful booking
+//       await db.execute(
+//         `INSERT INTO transactions (user_id, booking_id, amount, payment_method, status) 
+//          VALUES (?, ?, ?, ?, ?)`,
+//         [
+//           req.user.id,
+//           booking.id,
+//           total_amount,
+//           'card',  // Replace with dynamic method if needed
+//           'paid'
+//         ]
+//       );
+//       transactionCreated = true;
+//     } catch (transactionError) {
+//       console.error('⚠️ Transaction insert failed:', transactionError);
+//       // Log but don't fail the booking response
+//     }
+
+//     // ✅ Send final response
+//     res.json({
+//       success: true,
+//       message: 'Booking created successfully',
+//       booking_id: booking.id,
+//       user_id: req.user.id,
+//       car_id,
+//       pickup_datetime,
+//       return_datetime,
+//       with_driver,
+//       total_hours,
+//       base_cost,
+//       driver_fee,
+//       discount,
+//       tax,
+//       total_amount,
+//       registration_number: car.registration_number,
+//       transaction_created: transactionCreated
+//     });
+
+//   } catch (error) {
+//     console.error('❌ Booking error:', error);
+//     res.status(500).json({ success: false, message: 'Booking failed' });
+//   }
+// };
+
 const bookCar = async (req, res) => {
   try {
     const { car_id, pickup_date, pickup_time, return_date, return_time, with_driver, discount } = req.body;
@@ -51,83 +140,47 @@ const bookCar = async (req, res) => {
 
     const [[car]] = await db.execute('SELECT * FROM cars WHERE id = ?', [car_id]);
     const [[car_pricing]] = await db.execute('SELECT * FROM car_pricing WHERE car_id = ?', [car_id]);
-
-    if (!car) return res.status(404).json({ error: 'Car not found' });
-    if (!car_pricing) return res.status(404).json({ error: 'Car pricing not found' });
+    if (!car || !car_pricing) return res.status(404).json({ error: 'Car not found or pricing missing' });
 
     const price_per_hour = car_pricing.price_per_day / 24;
-    const total_hours = calculateHours(pickup_datetime, return_datetime);
+    const total_hours = Math.ceil((new Date(return_datetime) - new Date(pickup_datetime)) / (1000 * 60 * 60));
     const base_cost = total_hours * price_per_hour;
     const driver_fee = with_driver ? total_hours * 4345 : 0;
     const tax = Math.round(0.05 * (base_cost + driver_fee - discount));
-    const total_amount = base_cost + driver_fee - discount + tax;
+    const total_amount = Math.round(base_cost + driver_fee - discount + tax);
 
-    const coupon_code = 'Demo';
-    const pickup_location = "Pickup";
-    const return_location = "Return";
-
-    // ✅ Create booking
-    const booking = await Booking.create({
-      user_id: req.user.id,
-      car_id,
-      pickup_datetime,
-      return_datetime,
-      with_driver,
-      coupon_code,
-      total_hours,
-      base_cost,
-      driver_fee,
-      tax,
-      discount,
-      total_amount,
-      pickup_location,
-      return_location
+    // ✅ Razorpay order
+    const order = await razorpay.orders.create({
+      amount: total_amount * 100, // in paise
+      currency: 'INR',
+      receipt: `receipt_${Date.now()}`,
+      payment_capture: 1
     });
 
-    let transactionCreated = false;
-
-    try {
-      // ✅ Insert transaction after successful booking
-      await db.execute(
-        `INSERT INTO transactions (user_id, booking_id, amount, payment_method, status) 
-         VALUES (?, ?, ?, ?, ?)`,
-        [
-          req.user.id,
-          booking.id,
-          total_amount,
-          'card',  // Replace with dynamic method if needed
-          'paid'
-        ]
-      );
-      transactionCreated = true;
-    } catch (transactionError) {
-      console.error('⚠️ Transaction insert failed:', transactionError);
-      // Log but don't fail the booking response
-    }
-
-    // ✅ Send final response
     res.json({
       success: true,
-      message: 'Booking created successfully',
-      booking_id: booking.id,
-      user_id: req.user.id,
-      car_id,
-      pickup_datetime,
-      return_datetime,
-      with_driver,
-      total_hours,
-      base_cost,
-      driver_fee,
-      discount,
-      tax,
-      total_amount,
-      registration_number: car.registration_number,
-      transaction_created: transactionCreated
+      razorpay_order_id: order.id,
+      currency: order.currency,
+      amount: total_amount,
+      booking_preview: {
+        car_id,
+        pickup_datetime,
+        return_datetime,
+        with_driver,
+        total_hours,
+        base_cost,
+        driver_fee,
+        tax,
+        discount,
+        total_amount,
+        pickup_location: 'Pickup',  // Or dynamic
+        return_location: 'Return'
+      }
     });
 
-  } catch (error) {
-    console.error('❌ Booking error:', error);
-    res.status(500).json({ success: false, message: 'Booking failed' });
+  } catch (err) {
+    console.error("❌ Razorpay Booking Error:", err);
+    res.status(500).json({ success: false, message: 'Failed to create payment order' });
   }
 };
 

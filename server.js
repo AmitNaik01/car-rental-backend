@@ -32,6 +32,7 @@ const testRoutes = require('./routes/testRoutes');
 const adminCarsRoutes = require('./routes/adminCars');
 const userBookingRoutes = require('./routes/userBooking');
 const chatRoutes = require('./routes/chatRoutes'); // ✅ Chat Routes
+const paymentRoutes = require('./routes/paymentRoutes');
 
 // ✅ Route Registrations
 app.use('/api/auth', authRoutes);
@@ -39,7 +40,7 @@ app.use('/api/test', testRoutes);
 app.use('/api/admin', adminCarsRoutes);
 app.use('/api/user', userBookingRoutes);
 app.use('/api/chat', chatRoutes); // mounted at /api/chat
-
+app.use('/api', paymentRoutes);
 // ✅ Start Server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));

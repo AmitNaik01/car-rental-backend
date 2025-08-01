@@ -51,7 +51,7 @@ const verifyRazorpayPayment = async (req, res) => {
       ]
     );
 
-    res.json({ success: true, message: "Payment verified and booking confirmed", booking_id: booking.id });
+    res.json({ success: true, message: "Payment verified and booking confirmed", booking_id: booking.id , car_id: booking_details.car_id });
 
   } catch (error) {
     console.error("❌ Payment Verification Error:", error);

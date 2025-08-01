@@ -160,6 +160,7 @@ const bookCar = async (req, res) => {
     res.json({
       success: true,
       razorpay_order_id: order.id,
+      razorpay_key_id: process.env.RAZORPAY_KEY_ID,
       currency: order.currency,
       amount: total_amount,
       booking_preview: {

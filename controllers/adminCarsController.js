@@ -5,7 +5,7 @@ const fs = require('fs');
 exports.saveBasicInfo = async (req, res) => {
   const {
     car_id, make, model, year, color, registration_number, vin, about,
-    features, specifications
+    features, specifications, latitude, longitude
   } = req.body;
 
   const adminId = req.user.id; // Assuming JWT middleware sets req.user
@@ -16,15 +16,15 @@ exports.saveBasicInfo = async (req, res) => {
     if (car_id) {
       // Update car
       await db.execute(
-        `UPDATE cars SET make = ?, model = ?, year = ?, color = ?, registration_number = ?, vin = ?, about = ?, updated_at = NOW() WHERE id = ?`,
-        [make, model, year, color, registration_number, vin, about, car_id]
+        `UPDATE cars SET make = ?, model = ?, year = ?, color = ?, registration_number = ?, vin = ?, about = ?, latitude = ?, longitude = ?, updated_at = NOW() WHERE id = ?`,
+        [make, model, year, color, registration_number, vin, about, latitude, longitude, car_id]
       );
     } else {
       // Insert car
       const [result] = await db.execute(
-        `INSERT INTO cars (make, model, year, color, registration_number, vin, about, created_by)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-        [make, model, year, color, registration_number, vin, about, adminId]
+        `INSERT INTO cars (make, model, year, color, registration_number, vin, about, latitude, longitude, created_by)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [make, model, year, color, registration_number, vin, about, latitude, longitude, adminId]
       );
       carIdToUse = result.insertId;
     }

@@ -1,6 +1,7 @@
 const db = require('../config/db');
 const Booking = require('../models/userBookingModel');
 const razorpay = require('../utils/razorpayInstance');
+const sendNotification = require('../utils/sendNotification');
 
 function calculateHours(start, end) {
   const s = new Date(start);
@@ -543,6 +544,13 @@ const cancelBooking = async (req, res) => {
       'UPDATE bookings SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND user_id = ?',
       ['canceled', bookingId, userId]
     );
+    await sendNotification(
+  req.user.id,
+  "Booking Cancelled",
+  "Your booking has been successfully cancelled.",
+  "booking"
+);
+
 
     res.json({ success: true, message: 'Booking canceled successfully', booking_id: bookingId });
   } catch (error) {

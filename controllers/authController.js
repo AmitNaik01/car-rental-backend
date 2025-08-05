@@ -2,6 +2,7 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const userModel = require('../models/userModel');
 const { sendResetCode } = require('../utils/mailer');
+const sendNotification = require('../utils/sendNotification');
 
 const JWT_SECRET = process.env.JWT_SECRET;
 

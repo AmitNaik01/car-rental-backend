@@ -27,7 +27,8 @@ const {
   getTransactionHistory,
   getCarBookings,
   getCarBookingSummary,
-  getAdminDashboardData
+  getAdminDashboardData,
+  sendCustomNotification
   // modifyBooking,
   // cancelBooking
 } = require('../controllers/adminCarsController');
@@ -43,6 +44,7 @@ router.post('/cars/save-pricing', protectedAdmin, saveCarPricing);
 
 //  3. Save availability info
 router.post('/cars/save-availability', protectedAdmin, saveCarAvailability);
+router.post('/send-notificationy', protectedAdmin, sendCustomNotification);
 
 //  4. Upload car images
 

@@ -1,6 +1,7 @@
 const db = require("../config/db"); // db is already the pool
 const path = require("path");
 const fs = require('fs');
+const sendNotification = require('../utils/sendNotification');
 
 exports.saveBasicInfo = async (req, res) => {
   const {
@@ -1447,5 +1448,21 @@ exports.getAdminDashboardData = async (req, res) => {
       message: error.message,
       stack: error.stack
     });
+  }
+};
+exports.sendCustomNotification = async (req, res) => {
+  try {
+    const { user_id, title, message, type } = req.body;
+
+    if (!user_id || !title || !message || !type) {
+      return res.status(400).json({ success: false, message: "Missing fields" });
+    }
+
+    await sendNotification(user_id, title, message, type);
+
+    res.json({ success: true, message: "Notification sent" });
+  } catch (err) {
+    console.error('❌ Admin Notification Error:', err);
+    res.status(500).json({ success: false, message: "Failed to send" });
   }
 };

@@ -1,6 +1,7 @@
 const db = require('../config/db');
 const crypto = require('crypto');
 const Booking = require('../models/userBookingModel');
+const sendNotification = require('../utils/sendNotification');
 
 // Razorpay webhook/verification
 const verifyRazorpayPayment = async (req, res) => {
@@ -50,6 +51,13 @@ const verifyRazorpayPayment = async (req, res) => {
         'paid'
       ]
     );
+    await sendNotification(
+  req.user.id,
+  "Payment Confirmed",
+  "Your booking payment was successfully received.",
+  "payment"
+);
+
 
     res.json({ success: true, message: "Payment verified and booking confirmed", booking_id: booking.id , car_id: booking_details.car_id });
 
